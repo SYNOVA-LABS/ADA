@@ -8,6 +8,7 @@ __pycache__/
 # Sensitive data
 .env
 user_faces/
+face_data.db
 
 # misc
 *.DS_Store

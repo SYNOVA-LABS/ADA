@@ -11,7 +11,7 @@ import time
 import hashlib
 import logging
 from datetime import datetime
-from store_user import storeface
+from db_handler import load_face_data, store_face_data
 
 # Set up logging (sys logger instead of print because it's more flexible)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -23,57 +23,82 @@ if not os.path.exists(FACES_FOLDER):
     os.makedirs(FACES_FOLDER)
     logger.info(f"Created faces folder at {FACES_FOLDER}")
 
-# Function to load known faces from the faces folder and store them in the current session
-def load_known_faces():
-    # current sessions known faces (dynamic, will have new faces added later)
-    known_face_encodings = [] # a encoding is a 128D vector that represents the face for the computer to work with
-    known_face_names = []
+def load_known_faces() -> tuple:
+    """
+    Load the known faces from the database.
+
+    This function loads all the known faces stored in the SQLite database and returns two lists: one with the face encodings and one with the corresponding names.
+
+    Returns:
+        known_face_encodings (list[numpy.array]): A list of face encodings for the known faces.
+        known_face_names (list[str]): A list of the names corresponding to the known faces.
+    """
     
     logger.info("Loading known faces from database...")
-    # for each face in the folder of faces
-    for filename in os.listdir(FACES_FOLDER):
-        if filename.endswith(".jpg") or filename.endswith(".png"):
-            image_path = os.path.join(FACES_FOLDER, filename)
-            face_image = face_recognition.load_image_file(image_path)
-            
-            # Try to find a face in the image and if found, get the encoding and store it along with the name (which is the filename)
-            face_encodings = face_recognition.face_encodings(face_image)
-            if face_encodings:
-                # Use the first encoding found (the encoding is a list of encodings for each face found we just take the first one)
-                # though this may seem bad this is only the case for pre uploaded faces where many faces are in the same image
-                # when the program adds a new face it adds it one at a time so this is not an issue when using the program's capture
-                face_encoding = face_encodings[0]
-                known_face_encodings.append(face_encoding)
-                
-                # Use filename without extension as the person's name
-                name = os.path.splitext(filename)[0]
-                known_face_names.append(name)
-                logger.info(f"Loaded face: {name}")
-            else:
-                logger.warning(f"No face found in {filename}, skipping") # skip non faces
-    
+    # Get face data from database
+    known_face_encodings, known_face_names = load_face_data()
     logger.info(f"Loaded {len(known_face_encodings)} faces from database")
-    return known_face_encodings, known_face_names # return the known faces and their names
+    return known_face_encodings, known_face_names
 
-# Function to save a new face if not already in the database
-def save_new_face(face_image):
-    # Generate a unique name using timestamp and random hash for no duplicates
+def save_new_face(face_image: np.ndarray) -> tuple:
+    # Generate a unique ID using timestamp and hash
+    """
+    Save a new face image and store it in the database.
+
+    This function takes a new face image, generates a unique ID for it, saves the image to the faces folder, gets the face encoding, stores the face data in the database, and prompts the user for a name. It returns the name and face encoding.
+
+    Parameters:
+        face_image (numpy.ndarray): The new face image.
+
+    Returns:
+        name (str): The user-provided name for the new face.
+        face_encoding (numpy.ndarray): The face encoding for the new face.
+    """
+    
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     hash_object = hashlib.md5(str(time.time()).encode())
     unique_id = hash_object.hexdigest()[:8]
+    face_id = f"{timestamp}_{unique_id}"
     
-    name = f"person_{timestamp}_{unique_id}"
-    filename = f"{name}.jpg"
+    # Create the filename for storage
+    filename = f"{face_id}.jpg"
     file_path = os.path.join(FACES_FOLDER, filename)
     
-    # save the face image to the folder
+    # Save the face image to the folder
     cv2.imwrite(file_path, face_image)
-    logger.info(f"New face added to DB: {name}")
+    logger.info(f"New face image saved: {file_path}")
     
-    # return the name and the encoding of the new face to be added to the current session, once we reset the program it will be loaded from the folder
-    return name, face_recognition.face_encodings(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))[0]
+    # Get the face encoding
+    rgb_face_image = cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB)
+    face_encoding = face_recognition.face_encodings(rgb_face_image)[0]
+    
+    # Store the face data in database giving it a id, encoding and path and get the user-provided name back for the face, name also stored in the db
+    name = store_face_data(face_id, face_encoding, file_path)
+    
+    return name, face_encoding
 
-def main():
+def main() -> None:
+    """
+    Main function to run the real-time face recognition system.
+
+    This function initializes the webcam, loads known face data from the database,
+    and processes video frames to detect and recognize faces. If an unknown face is 
+    detected and the cooldown period has elapsed, it saves the face image, encodes it,
+    and updates the database. The function displays the video stream with detected 
+    faces and their names, and allows termination of the program via a keyboard input.
+
+    Steps:
+    1. Load known face encodings and names from the database.
+    2. Initialize webcam video capture.
+    3. Process video frames to detect and recognize faces.
+    4. Display recognized faces with bounding boxes and names.
+    5. Save unknown faces to the database if cooldown has elapsed.
+    6. Exit on 'q' key press and release resources.
+
+    Returns:
+        None
+    """
+
     # Load known faces (db of faces) each time the program starts then it will grow as we add new faces
     # but when the program starts again it will lead all those faces we recognized from the last session from the folder of faces
     known_face_encodings, known_face_names = load_known_faces()
