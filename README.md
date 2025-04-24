@@ -6,7 +6,7 @@
 
 ### Models
 
-- [User_Recognition](User_Detection/readme.md) (this model is used to regognized the current user for a personalized experience)
+- [User_Recognition](User_Detection/) (this model is used to regognized the current user for a personalized experience)
 
 ### Getting Started
 
