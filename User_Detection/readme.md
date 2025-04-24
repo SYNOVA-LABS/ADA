@@ -1,6 +1,6 @@
-# Flowchart
+# Flowcharts
 
-``` Mermaid
+```mermaid
 flowchart TD
     A[Start Program] --> B[Initialize Logging]
     B --> C[Setup FACES_FOLDER]
@@ -9,7 +9,7 @@ flowchart TD
     E --> H[End Program]
 ```
 
-``` Mermaid
+```mermaid
 flowchart TD
     subgraph load_known_faces
         D1[Initialize empty encodings and names lists] --> D2[Loop through files in FACES_FOLDER]
@@ -28,7 +28,7 @@ flowchart TD
     end
 ```
 
-``` Mermaid
+```mermaid
 flowchart TD
     subgraph main_initialization
         E1[Load known faces] --> E2[Initialize video capture]
@@ -39,7 +39,7 @@ flowchart TD
     end
 ```
 
-``` Mermaid
+```mermaid
 flowchart TD
     subgraph main_loop
         E6[Start video loop] --> E7[Capture frame]
@@ -65,7 +65,7 @@ flowchart TD
     end
 ```
 
-``` Mermaid
+```mermaid
 flowchart TD
     subgraph process_face
         F1[Compare with known faces] --> F2{Match found?}
