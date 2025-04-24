@@ -1,1 +1,13 @@
+# local
 .qodo
+
+# Python
+venv/
+__pycache__/
+
+# Sensitive data
+.env
+user_faces/
+
+# misc
+*.DS_Store

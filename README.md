@@ -1,4 +1,4 @@
-# ADA
+# ADA (Advanced Digital Agent)
 
 ## **MODEL ARCETECTURE V1.0**
 
