@@ -54,11 +54,8 @@ pip install -r requirements.txt
 #### 4. Run the User Detection System
 
 ```bash
-# Navigate to the User_Detection directory
-cd User_Detection
-
-# Run the face detection script
-python3 detect_user_by_face.py
+# from the root dir Run the main script
+python3 main.py
 ```
 
 #### More features coming soon!

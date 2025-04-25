@@ -24,7 +24,7 @@ flowchart TD
     I -- Yes --> J[Display User Name]
     I -- No --> K{Cooldown Elapsed?}
     
-    K -- No --> J
+    K -- No --> P
     K -- Yes --> L[Extract Face Image]
     L --> M[Save Image to Folder]
     M --> N[Prompt for User Details]
@@ -33,11 +33,13 @@ flowchart TD
     
     J --> P[Display Results]
     P --> Q{Quit Pressed?}
-    Q -- Yes --> Z
+    Q -- Yes --> R[Clean Up Resources]
+    R --> Z[Exit Program]
     Q -- No --> F
     
-    subgraph "Init"
+    subgraph "Initialization"
         B
+        C
     end
     
     subgraph "Face Processing"
@@ -49,6 +51,7 @@ flowchart TD
         M
         N
         O
+        J
     end
     
     subgraph "Display Loop"
@@ -56,6 +59,19 @@ flowchart TD
         P
         Q
     end
+    
+    subgraph "Cleanup"
+        R
+        Z
+    end
+    
+    style A fill:#b3e0ff,stroke:#0066cc
+    style Z fill:#ffb3b3,stroke:#cc0000
+    style B fill:#d9f2d9,stroke:#009900
+    style C fill:#d9f2d9,stroke:#009900
+    style G fill:#ffe6cc,stroke:#ff8000
+    style J fill:#e6ccff,stroke:#8000ff
+    style P fill:#e6ccff,stroke:#8000ff
 ```
 
 ## Key Features

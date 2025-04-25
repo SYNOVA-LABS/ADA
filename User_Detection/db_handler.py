@@ -133,8 +133,13 @@ def store_face_data(face_id: str, face_encoding: np.ndarray, image_path: str) ->
         name = generate_unique_username()
         auth = "guest"
     else: # if the image is found
-        # Get user input using OpenCV window 
-        name, auth = get_user_input_opencv(face_image)
+        try:
+            # Get user input using OpenCV window 
+            name, auth = get_user_input_opencv(face_image)
+        except Exception as e:
+            logger.error(f"Error getting user input: {e}")
+            name = generate_unique_username()
+            auth = "guest"
     
     try:
         # Connect to the database

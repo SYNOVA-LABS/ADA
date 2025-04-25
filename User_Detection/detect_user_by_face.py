@@ -77,48 +77,45 @@ def save_new_face(face_image: np.ndarray) -> tuple:
     
     return name, face_encoding
 
-def main() -> None:
+def detect_user(video_capture: cv2.VideoCapture) -> tuple:
     """
-    Main function to run the real-time face recognition system.
-
-    This function initializes the webcam, loads known face data from the database,
-    and processes video frames to detect and recognize faces. If an unknown face is 
+    Detect and identify a user from video feed.
+    
+    This function processes video frames to detect and recognize faces. If an unknown face is 
     detected and the cooldown period has elapsed, it saves the face image, encodes it,
     and updates the database. The function displays the video stream with detected 
-    faces and their names, and allows termination of the program via a keyboard input.
-
-    Steps:
-    1. Load known face encodings and names from the database.
-    2. Initialize webcam video capture.
-    3. Process video frames to detect and recognize faces.
-    4. Display recognized faces with bounding boxes and names.
-    5. Save unknown faces to the database if cooldown has elapsed.
-    6. Exit on 'q' key press and release resources.
-
+    faces and their names, and continues until a user is recognized or added.
+    NOTE: while the module supports multiple users via face locations allowing multiple faces in different locations we just take the first one recognized for now
+    
+    Parameters:
+        video_capture: OpenCV VideoCapture object with an active video feed
+        
     Returns:
-        None
+        tuple: (recognized_name, is_new_user)
+            - recognized_name (str): The name of the recognized or newly added user
+            - is_new_user (bool): Whether the user was newly added to the database
     """
 
     # Load known faces (db of faces) each time the program starts then it will grow as we add new faces
     # but when the program starts again it will lead all those faces we recognized from the last session from the folder of faces
     known_face_encodings, known_face_names = load_known_faces()
-    
-    # Initialize video capture (0 for default webcam)
-    video_capture = cv2.VideoCapture(0)
-    
+    # if no video capture is found then we return None and False
     if not video_capture.isOpened():
         logger.error("Failed to open webcam")
-        return
+        return None, False
     
     logger.info("Starting face recognition system...")
     
     # Variables for processing the video stream (current frame)
-    face_locations = []
-    face_encodings = []
-    face_names = []
-    process_this_frame = True
-    last_saved_time = 0
+    face_locations = [] # list of tuples with the coordinates of the face in the format (top, right, bottom, left)
+    face_encodings = [] # list of encodings for each face found in the frame
+    face_names = [] # list of names for each face found in the frame
+    process_this_frame = True # process every other frame to save time
+    last_saved_time = 0 # time of the last saved face
     save_cooldown = 5  # Seconds to wait before saving another unknown face preventing duplicate saves, still we process and display the face recognition but just dont save it to the db
+    
+    recognized_user = None # name of the recognized user
+    is_new_user = False # whether the user was newly added in which case its in curr session only 
     
     # Main loop for video capture
     while True:
@@ -151,6 +148,10 @@ def main() -> None:
                     first_match_index = matches.index(True)
                     name = known_face_names[first_match_index]
                     logger.info(f"Face recognized: {name}")
+                    recognized_user = name
+                    is_new_user = False
+                    # Return early with the recognized user to move on to greeting
+                    return recognized_user, is_new_user
                 # If no match was found, add the face to the database
                 else:
                     logger.info("Face not in DB")
@@ -176,6 +177,10 @@ def main() -> None:
                             known_face_names.append(name) # add the name to the known faces list
                             known_face_encodings.append(new_encoding) # add the encoding to the known faces list
                             last_saved_time = current_time # update the last saved time to the current time so we can save another face after the cooldown
+                            recognized_user = name
+                            is_new_user = True
+                            # Return early with the new user to move on to greeting
+                            return recognized_user, is_new_user
                         except Exception as e:
                             logger.error(f"Error saving new face: {e}")
                 
@@ -183,37 +188,4 @@ def main() -> None:
         
         process_this_frame = not process_this_frame # Toggle the process_this_frame variable to process every other frame if we did this frame skip the next one and vice versa
         
-        # Display the results on the frame (window)
-        for (top, right, bottom, left), name in zip(face_locations, face_names): # for each face location and name in the current frame
-            # Scale back up face locations since the frame we detected in was 1/4 size
-            top *= 4
-            right *= 4
-            bottom *= 4
-            left *= 4
-            
-            # Draw a box around the face
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2) # red box
-            
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED) # red text box
-            cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1) # white text
-        
-        # Display face count in the corner of the frame
-        face_count = len(face_locations)
-        cv2.putText(frame, f"Faces: {face_count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        
-        # Display the resulting image with all the boxes and names
-        cv2.imshow('Face Recognition', frame)
-        
-        # Hit 'q' on the keyboard to quit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    
-    # Release resources and close windows
-    video_capture.release()
-    cv2.destroyAllWindows()
-    logger.info("Face recognition system stopped")
-
-# Run
-if __name__ == "__main__":
-    main()
+    return None, False # if no user was detected return None and False
