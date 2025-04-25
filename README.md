@@ -1,3 +1,6 @@
+
+![model](assets/adalogo.png)
+
 # ADA (Advanced Digital Agent)
 
 ## **MODEL ARCETECTURE V1.0**
