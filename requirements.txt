@@ -8,3 +8,4 @@ sounddevice>=0.4.5 # For audio listening
 llama-cpp-python>=0.2.0 # For LLaMA model interaction
 tqdm>=4.62.0 # For progress bars
 requests>=2.26.0 # For HTTP requests FOR MODEL DOWNLOAD
+dotenv>=0.9.9 # For environment variable management

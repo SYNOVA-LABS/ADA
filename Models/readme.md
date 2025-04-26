@@ -33,7 +33,7 @@ llm = Llama(
 ```
 
 ## Setup
-
+Use the start script (instructions is the readme) after that the models will be added here
 
 ## Hardware Requirements
 

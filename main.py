@@ -15,8 +15,9 @@ from User_Detection.detect_user_by_face import detect_user
 from Greet_User.greet_user import greet_user
 from Activator.listener import wake_word_detector
 from User_Input.get_user_input import get_user_question
-from LLM_CV_Context_Questions.LLM_context_for_CV import log_user_question, play_response_async
-from CV_Context.frame_context import process_frame_with_context
+# Import new Vision GPT module instead of separate LLM and CV modules
+from Vision_GPT.vision_processor import analyze_image_with_question
+from Answer_TTS.TTS import play_response_async
 
 # Set up logging (sys logger instead of print because it's more flexible)
 logging.basicConfig(
@@ -170,7 +171,7 @@ def display_greeting(
 def activate_ada(frame: cv2.Mat) -> None:
     """
     Activate ADA core functionality. Displays system status and processes user questions.
-    The actual question handling logic is in the User_Input module.
+    Now uses the integrated Vision GPT module for processing.
 
     Args:
         frame: Current video frame to display
@@ -182,8 +183,7 @@ def activate_ada(frame: cv2.Mat) -> None:
         activate_ada.question_time = None  # Initialize to current time, not None
         activate_ada.current_response = None
         activate_ada.processing_question = False
-        activate_ada.cv_context = None
-        activate_ada.cv_response = None
+        activate_ada.vision_response = None
         activate_ada.last_processed_question = None
         activate_ada.response_played = False
         activate_ada.listening_for_new_question = True
@@ -199,8 +199,7 @@ def activate_ada(frame: cv2.Mat) -> None:
             activate_ada.listening_for_new_question = False
             
             # Clear previous responses
-            activate_ada.cv_context = None
-            activate_ada.cv_response = None
+            activate_ada.vision_response = None
             
             # Get the user's question
             result = get_user_question()
@@ -226,29 +225,25 @@ def activate_ada(frame: cv2.Mat) -> None:
                 logger.info(f"User asked: {result}")
                 
                 # Set display timeout 
-                activate_ada.display_until = time.time() + 10  # Show for 10 seconds
+                activate_ada.display_until = time.time() + 15  # Show for 15 seconds
                 
-                # Send the question to LLM to generate CV context
-                cv_context = log_user_question(result)
-                activate_ada.cv_context = cv_context
+                # Create a copy of the current frame to send for processing
+                current_frame_copy = frame.copy()
                 
-                # Send the current frame and CV context to the frame_context module
-                if cv_context:
-                    # Create a copy of the current frame to send for processing
-                    current_frame_copy = frame.copy()
-                    cv_response = process_frame_with_context(current_frame_copy, cv_context)
-                    activate_ada.cv_response = cv_response
-                    logger.info(f"CV response: {cv_response}")
-                    
-                    # Play the response using TTS only once
-                    if cv_response and cv_response.strip() and not activate_ada.response_played:
-                        # Play the response once and mark it as played
-                        response_thread = threading.Thread(
-                            target=play_response_async, args=(cv_response,)
-                        )
-                        response_thread.daemon = True
-                        response_thread.start()
-                        activate_ada.response_played = True
+                # Process the question and frame together with the Vision GPT module
+                vision_response = analyze_image_with_question(current_frame_copy, result)
+                activate_ada.vision_response = vision_response
+                logger.info(f"Vision response: {vision_response}")
+                
+                # Play the response using TTS only once
+                if vision_response and vision_response.strip() and not activate_ada.response_played:
+                    # Play the response once and mark it as played
+                    response_thread = threading.Thread(
+                        target=play_response_async, args=(vision_response,)
+                    )
+                    response_thread.daemon = True
+                    response_thread.start()
+                    activate_ada.response_played = True
             else:
                 logger.info("No question detected")
                 # Important: Ensure we reset state even if no result detected
@@ -353,43 +348,71 @@ def activate_ada(frame: cv2.Mat) -> None:
             2,
         )
         
-        # Display CV context if available
-        if activate_ada.cv_context:
-            cv_context = activate_ada.cv_context
-            cv2.putText(
-                frame,
-                f"CV: {cv_context[:50]}{'...' if len(cv_context) > 50 else ''}",
-                (20, 100),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 255),
-                2,
-            )
-        
-        # Display CV response if available
-        if activate_ada.cv_response:
-            cv_response = activate_ada.cv_response
-            cv2.putText(
-                frame,
-                f"A: {cv_response[:50]}{'...' if len(cv_response) > 50 else ''}",
-                (20, 130),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 0),
-                2,
-            )
+        # Display Vision GPT response if available
+        if activate_ada.vision_response:
+            vision_response = activate_ada.vision_response
+            
+            # Split response into multiple lines if it's too long
+            max_chars = 50
+            if len(vision_response) > max_chars:
+                lines = []
+                current_line = vision_response
+                while len(current_line) > max_chars:
+                    # Try to split at spaces to avoid cutting words
+                    split_point = current_line[:max_chars].rfind(' ')
+                    if split_point == -1:  # If no space found, force split
+                        split_point = max_chars
+                    
+                    lines.append(current_line[:split_point])
+                    current_line = current_line[split_point:].strip()
+                
+                if current_line:  # Add the last part if anything remains
+                    lines.append(current_line)
+                
+                # Display the first two lines only to avoid overcrowding
+                for i, line in enumerate(lines[:2]):
+                    cv2.putText(
+                        frame,
+                        f"A: {line}",
+                        (20, 100 + i*30),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (0, 255, 0),
+                        2,
+                    )
+                
+                # Indicate if there's more text
+                if len(lines) > 2:
+                    cv2.putText(
+                        frame,
+                        "...",
+                        (20, 160),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (0, 255, 0),
+                        2,
+                    )
+            else:
+                # If response is short enough, display it on a single line
+                cv2.putText(
+                    frame,
+                    f"A: {vision_response}",
+                    (20, 100),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                )
     elif activate_ada.current_question:
         # If we've passed the display timeout, explicitly clear the display
         activate_ada.current_question = None
-        activate_ada.cv_context = None
-        activate_ada.cv_response = None
+        activate_ada.vision_response = None
         logger.info("Cleared question display due to timeout")
     
     # Additional timer-based clearing mechanism
     if hasattr(activate_ada, 'display_until') and time.time() > activate_ada.display_until and activate_ada.current_question is not None:
         activate_ada.current_question = None
-        activate_ada.cv_context = None
-        activate_ada.cv_response = None
+        activate_ada.vision_response = None
         logger.info("Cleared question display due to timeout (secondary check)")
     
     # Show processing indicator if currently processing a question
