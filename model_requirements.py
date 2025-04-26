@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 
 import os
-import sys
-import subprocess
 import requests
 from tqdm import tqdm
 import zipfile
 import tarfile
-import shutil
 
 # Fix the models directory path to point to the Models folder
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Models")
 
 MODEL_URLS = {
     "vosk-model-small-en-us-0.15": "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
-    "tinyllama-1.1b-chat-v1.0.Q8_0.gguf": "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q8_0.gguf"
 }
 
 def download_file(url, destination):

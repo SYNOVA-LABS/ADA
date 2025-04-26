@@ -12,12 +12,10 @@ from pygame import mixer  # for playing audio files
 
 # Add User_Detection to the system path to import modules
 from User_Detection.detect_user_by_face import detect_user
-from Greet_User.greet_user import greet_user
 from Activator.listener import wake_word_detector
 from User_Input.get_user_input import get_user_question
-# Import new Vision GPT module instead of separate LLM and CV modules
-from Vision_GPT.vision_processor import analyze_image_with_question
-from Answer_TTS.TTS import play_response_async
+from Vision_GPT.vision_and_promt_processor import analyze_image_with_question
+from TTS.text_to_speech import play_response_async
 
 # Set up logging (sys logger instead of print because it's more flexible)
 logging.basicConfig(
@@ -64,7 +62,7 @@ def wait_for_wake_word(
     # Display waiting message
     cv2.putText(
         frame,
-        "Waiting for wake word...",
+        "Waiting for wake word try say 'hey ada' or 'hi'...",
         (20, 50),
         cv2.FONT_HERSHEY_SIMPLEX,
         1,
@@ -91,33 +89,29 @@ def wait_for_wake_word(
     return wake_thread, wake_word_detected
 
 
-def perform_user_detection(frame: cv2.Mat, video_capture: cv2.VideoCapture) -> tuple:
+def perform_user_detection(video_capture: cv2.VideoCapture, detection_status: dict) -> None:
     """
-    Perform user detection once.
+    Perform user detection in a separate thread.
 
     Args:
-        frame: Current video frame to display
         video_capture: Video capture object
-
-    Returns:
-        tuple: (detected_user, is_new_user)
+        detection_status: Dictionary to pass detection results back to main thread
     """
-    # Show detecting message
-    cv2.putText(
-        frame,
-        "Detecting user...",
-        (20, 50),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (0, 165, 255),
-        2,
-    )
-    cv2.imshow("ADA System", frame)
-    cv2.waitKey(1)  # Update the display
-
-    # Detect user once
-    logger.info("Starting user detection...")
-    return detect_user(video_capture)
+    logger.info("Starting user detection in thread...")
+    try:
+        # Detect user once
+        detected_user, is_new_user = detect_user(video_capture)
+        
+        # Pass results back through the shared dictionary
+        detection_status["complete"] = True
+        detection_status["user"] = detected_user
+        detection_status["is_new"] = is_new_user
+        
+        logger.info(f"Detection thread completed: user={detected_user}, is_new={is_new_user}")
+    except Exception as e:
+        logger.error(f"Error in detection thread: {e}")
+        detection_status["complete"] = True
+        detection_status["error"] = str(e)
 
 
 def display_greeting(
@@ -470,16 +464,21 @@ def main() -> None:
         # State flags
         waiting_for_wake_word = True
         user_detected = False
+        detection_started = False
         detection_completed = False
         greeting_completed = False
+        greeting_started = False
 
         # Other variables
         wake_thread = None
         detected_user = None
         is_new_user = False
+        detection_thread = None
+        greeting_start_time = 0
 
-        # Use a dictionary to track wake word status between thread and main function
+        # Use dictionaries to track status between threads and main function
         wake_word_status = {"detected": False}
+        detection_status = {"complete": False, "user": None, "is_new": False, "error": None}
 
         logger.info("Waiting for wake word activation...")
 
@@ -501,26 +500,79 @@ def main() -> None:
                     # Reset the wake word status for next time
                     wake_word_status["detected"] = False
 
-            # STATE 2: Wake word detected, start user detection (only once)
-            elif not detection_completed:
-                detected_user, is_new_user = perform_user_detection(
-                    frame, video_capture
+            # STATE 2: Wake word detected, start user detection (non-blocking)
+            elif not detection_started:
+                # Show detecting message but don't block
+                cv2.putText(
+                    frame,
+                    "Detecting user...",
+                    (20, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 165, 255),
+                    2,
                 )
-                detection_completed = True  # Mark detection as completed
-
-                if detected_user:
-                    user_detected = True
-                    logger.info(
-                        f"User detected: {detected_user} (New user: {is_new_user})"
-                    )
-                    # Greet the user with audio (non-blocking)
-                    greet_user(detected_user)
-                    greeting_start_time = time.time()
-                else:
-                    logger.warning("No user was detected.")
+                
+                # Start detection in a separate thread
+                detection_thread = threading.Thread(
+                    target=perform_user_detection,
+                    args=(video_capture, detection_status)
+                )
+                detection_thread.daemon = True
+                detection_thread.start()
+                
+                detection_started = True
+                logger.info("User detection started in background thread")
+            
+            # Check if detection is complete
+            elif detection_started and not detection_completed:
+                # Show that detection is in progress
+                cv2.putText(
+                    frame,
+                    "Detecting user...",
+                    (20, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 165, 255),
+                    2,
+                )
+                
+                # Check if the detection thread has completed
+                if detection_status["complete"]:
+                    detection_completed = True
+                    detected_user = detection_status["user"]
+                    is_new_user = detection_status["is_new"]
+                    
+                    if detected_user:
+                        user_detected = True
+                        logger.info(
+                            f"User detected: {detected_user} (New user: {is_new_user})"
+                        )
+                        # Don't start greeting yet, just set the flag to start it
+                        greeting_start_time = time.time()
+                        greeting_started = False
+                    else:
+                        logger.warning("No user was detected.")
 
             # STATE 3: User detected, show greeting for specified duration
             elif user_detected and not greeting_completed:
+                # Start the greeting in a separate thread when we first enter this state
+                if not greeting_started:
+                    def play_greeting():
+                        try:
+                            # Play the greeting asynchronously
+                            play_response_async(
+                                f"Hello {detected_user}, welcome to ADA, your personal digital assistant.")
+                        except Exception as e:
+                            logger.error(f"Error playing greeting: {e}")
+                    
+                    # Start the greeting thread
+                    greeting_thread = threading.Thread(target=play_greeting)
+                    greeting_thread.daemon = True
+                    greeting_thread.start()
+                    greeting_started = True
+                
+                # Keep displaying the visual greeting while the audio plays
                 greeting_completed = display_greeting(
                     frame, detected_user, greeting_start_time
                 )

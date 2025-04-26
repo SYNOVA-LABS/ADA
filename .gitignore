@@ -1,6 +1,9 @@
 # local
 .qodo
 
+# misc
+*.DS_Store
+
 # Python
 venv/
 __pycache__/
@@ -10,12 +13,9 @@ __pycache__/
 user_faces/
 face_data.db
 
-# misc
-*.DS_Store
-
 # Models
 Models/vosk-*
 Models/tinyllama-*
 
-# logs
+# logs (includes sensitive data like conversations)
 logs/

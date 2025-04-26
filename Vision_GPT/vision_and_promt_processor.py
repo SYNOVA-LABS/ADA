@@ -9,17 +9,13 @@ import base64
 import logging
 import requests
 import time
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 import cv2
 import io
 from PIL import Image
-import json
 from dotenv import load_dotenv
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file

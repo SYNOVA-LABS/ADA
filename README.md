@@ -17,6 +17,7 @@ ADA is a modular, extensible personal assistant system that combines face recogn
 - [**CV Context**](CV_Context/) - Analyzes visual environment to provide contextual awareness
 - [**LLM CV Context Questions**](LLM_CV_Context_Questions/) - Generates intelligent questions about visual scenes
 - [**User Input**](User_Input/) - Captures and processes various forms of user input
+- [**Vision GPT**](Vision_GPT/) - Integrates visual input with language understanding for image analysis and questions
 - [**Models**](Models/) - Contains language and speech models used by the system
 
 ### Key Features
@@ -26,17 +27,39 @@ ADA is a modular, extensible personal assistant system that combines face recogn
 - **Natural Interaction** - Responds to voice commands and generates natural speech
 - **Modular Design** - Extensible architecture allowing for new capabilities
 - **Privacy-Focused** - Processes data locally when possible
+- **Visual Analysis** - Answers questions about visual content in real-time
 
 ### Getting Started
 
-#### Run the Bash script (this will download eveything you need and run the program)
-#### In you terminal from the root dir enter the command 
-```**bash**
-./setup_and_run.sh 
+#### Required:
+- OpenAI API key (Get one at [OpenAI Platform](https://platform.openai.com/))
+
+#### Run the Bash script
+The setup script will guide you through installation and prompt for your OpenAI API key.
+
+From the root directory, run:
+```bash
+./setup_and_run.sh
 ```
 
+The script will:
+1. Set up a Python virtual environment
+2. Install all required dependencies
+3. Prompt you for your OpenAI API key
+4. Launch the ADA application
 
-#### Install Python (if you dont have python)
+#### Using ADA with Wake Words
+Once ADA is running, activate it using any of these wake words:
+- "Hey ADA"
+- "Hey A.D.A"
+- "OK ADA"
+- "Hello ADA"
+- "ADA"
+- "Hi"
+
+After saying a wake word, ADA will detect your presence and begin listening for your commands.
+
+#### Install Python (if you don't have Python)
 
 **macOS:**
 ```bash
@@ -54,7 +77,7 @@ brew install python3
 - 4GB RAM minimum (8GB recommended)
 - Webcam for user detection
 - Microphone for voice input
-- Internet connection for certain LLM capabilities
+- Internet connection for OpenAI API access
 
 ### Future Development
 

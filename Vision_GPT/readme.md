@@ -51,6 +51,9 @@ flowchart TD
 The module requires an OpenAI API key with access to GPT-4o:
 1. Create a `.env` file in the ADA root directory
 2. Add your API key: `OPENAI_API_KEY=your_key_here`
+ 
+- **OR**
+Run the setup and start script (instuctions in readme) and then input you openai API key when asked 
 
 ## Integration & Usage
 

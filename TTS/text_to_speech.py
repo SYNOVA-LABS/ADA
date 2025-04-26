@@ -1,15 +1,13 @@
 """
-this module provides a function to play the response of a language model
+this module provides a function to play any response of ada via text-to-speech (uses users speaker)
 """
 
 import logging
 import os
 import time
 import tempfile
-import threading
 from gtts import gTTS
 from pygame import mixer
-from llama_cpp import Llama
 
 # Set up logging
 logger = logging.getLogger(__name__)
