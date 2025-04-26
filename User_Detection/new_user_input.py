@@ -10,6 +10,7 @@ import time
 import hashlib
 from datetime import datetime
 
+
 def generate_unique_username() -> str:
     """
     Generate a unique username based on the current timestamp and a random hash.
@@ -44,7 +45,6 @@ def get_user_input_opencv(face_image: np.ndarray) -> tuple:
             - name (str): The entered or generated name for the user.
             - auth (str): The authorization level ('guest', 'user', or 'admin').
     """
-
     # default values
     name = None  # just a placeholder, if no name we generate one later
     auth = "guest"

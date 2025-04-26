@@ -13,6 +13,7 @@ import time  # for time.sleep
 
 logger = logging.getLogger(__name__)
 
+
 def play_greeting_async(temp_filename: str, mixer: mixer) -> None:
     """
     Play the greeting audio file asynchronously.
@@ -32,7 +33,6 @@ def play_greeting_async(temp_filename: str, mixer: mixer) -> None:
         # Clean up the temporary file
         os.unlink(temp_filename)
         logger.info("Greeting complete")
-        logger.info("User Detection completed continuing...")
     except Exception as e:
         logger.error(f"Error playing greeting: {e}")
 

@@ -33,7 +33,6 @@ def init_database() -> None:
     Raises:
         sqlite3.Error: If an error occurs during database operations.
     """
-
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
@@ -78,7 +77,6 @@ def load_face_data() -> tuple:
     Raises:
         Exception: If an error occurs during the unpickling of face encodings.
     """
-
     init_database()  # create the database if it doesn't exist
 
     # Connect to the database
