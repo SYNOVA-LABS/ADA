@@ -25,7 +25,7 @@ def play_greeting_async(temp_filename: str) -> None:
     try:
         # Initialize the mixer
         mixer.init()
-        
+
         mixer.music.load(temp_filename)
         mixer.music.play()
 

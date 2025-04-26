@@ -39,7 +39,7 @@ def init_systems() -> tuple:
         return video_capture, False
 
     logger.info("Camera initialized successfully.")
-    
+
     return video_capture, True
 
 

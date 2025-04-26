@@ -12,3 +12,8 @@ face_data.db
 
 # misc
 *.DS_Store
+
+# Models
+Models/vosk-*
+Models/tinyllama-*
+
