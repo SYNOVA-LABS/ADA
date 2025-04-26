@@ -11,10 +11,8 @@ import time
 import hashlib
 import logging
 from datetime import datetime
-from db_handler import load_face_data, store_face_data
+from .db_handler import load_face_data, store_face_data
 
-# Set up logging (sys logger instead of print because it's more flexible)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # pull known faces from the folder of faces pics if DNE it creates it

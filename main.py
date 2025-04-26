@@ -5,16 +5,10 @@ This module initializes the webcam, handles user detection and greets recognized
 
 import cv2  # OpenCV for video capture for user to see themselves
 import logging
-import sys
-import os
 import time
 from pygame import mixer  # for playing audio files
 
 # Add User_Detection to the system path to import modules
-sys.path.append(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "User_Detection")
-)
-
 from User_Detection.detect_user_by_face import detect_user
 from Greet_User.greet_user import greet_user
 

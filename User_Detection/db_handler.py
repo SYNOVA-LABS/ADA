@@ -9,10 +9,8 @@ import numpy as np
 import pickle
 import logging
 import cv2
-import hashlib
-import time
 from datetime import datetime
-from new_user_input import generate_unique_username, get_user_input_opencv
+from .new_user_input import generate_unique_username, get_user_input_opencv
 
 logger = logging.getLogger(__name__)  # system logger
 

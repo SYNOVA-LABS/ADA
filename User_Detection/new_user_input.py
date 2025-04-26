@@ -10,7 +10,6 @@ import time
 import hashlib
 from datetime import datetime
 
-
 def generate_unique_username() -> str:
     """
     Generate a unique username based on the current timestamp and a random hash.
