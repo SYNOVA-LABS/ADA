@@ -35,6 +35,8 @@ def play_greeting_async(temp_filename: str) -> None:
 
         # Clean up the temporary file
         os.unlink(temp_filename)
+        # close mixer
+        mixer.quit()
         logger.info("Greeting complete")
     except Exception as e:
         logger.error(f"Error playing greeting: {e}")
@@ -77,6 +79,5 @@ def greet_user(name: str) -> None:
         )
         greeting_thread.daemon = True  # daemon is a common word for background thread
         greeting_thread.start()
-
     except Exception as e:
         logger.error(f"Error creating greeting: {e}")

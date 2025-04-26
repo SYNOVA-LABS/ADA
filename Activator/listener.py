@@ -19,7 +19,7 @@ BLOCK_SIZE = 8000
 MODEL_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "Models/vosk-model-small-en-us-0.15"
 )
-WAKE_WORDS = ["hey ada", "hey a.d.a", "ok ada", "hello ada", "ada"]
+WAKE_WORDS = ["hey ada", "hey a.d.a", "ok ada", "hello ada", "ada", 'hi']
 
 
 def wake_word_detector() -> bool:

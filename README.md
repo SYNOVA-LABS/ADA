@@ -1,19 +1,42 @@
-
 ![model](assets/adalogo.png)
 
 # ADA (Advanced Digital Agent)
 
-## **MODEL ARCETECTURE V1.0**
+ADA is a modular, extensible personal assistant system that combines face recognition, contextual understanding, and natural language processing to provide a personalized interactive experience.
+
+## **SYSTEM ARCHITECTURE V1.0**
 
 ![model](assets/ada.svg)
 
-### Models
 
-- [User_Recognition](User_Detection/) (this model is used to regognized the current user for a personalized experience)
+### Modules
+
+- [**User Detection**](User_Detection/) - Recognizes users via face recognition for personalized interactions
+- [**Activator**](Activator/) - Central control system managing ADA's activation states and module coordination
+- [**Greet User**](Greet_User/) - Provides personalized audio greetings using text-to-speech technology
+- [**CV Context**](CV_Context/) - Analyzes visual environment to provide contextual awareness
+- [**LLM CV Context Questions**](LLM_CV_Context_Questions/) - Generates intelligent questions about visual scenes
+- [**User Input**](User_Input/) - Captures and processes various forms of user input
+- [**Models**](Models/) - Contains language and speech models used by the system
+
+### Key Features
+
+- **User Recognition** - Identifies users through computer vision
+- **Contextual Understanding** - Interprets visual environment and user context
+- **Natural Interaction** - Responds to voice commands and generates natural speech
+- **Modular Design** - Extensible architecture allowing for new capabilities
+- **Privacy-Focused** - Processes data locally when possible
 
 ### Getting Started
 
-#### 1. Install Python
+#### Run the Bash script (this will download eveything you need and run the program)
+#### In you terminal from the root dir enter the command 
+```**bash**
+./setup_and_run.sh 
+```
+
+
+#### Install Python (if you dont have python)
 
 **macOS:**
 ```bash
@@ -25,37 +48,27 @@ brew install python3
 2. Run the installer and make sure to check "Add Python to PATH"
 3. Verify installation by opening command prompt and typing `python --version`
 
-#### 2. Create and Activate Virtual Environment (Recommended)
+### System Requirements
 
-**macOS:**
-```bash
-# Create virtual environment
-python3 -m venv venv_name
+- Python 3.8 or higher
+- 4GB RAM minimum (8GB recommended)
+- Webcam for user detection
+- Microphone for voice input
+- Internet connection for certain LLM capabilities
 
-# Activate virtual environment
-source venv_name/bin/activate
-```
+### Future Development
 
-**Windows:**
-```bash
-# Create virtual environment
-python -m venv venv_name
+- Enhanced CV contextual understanding
+- Multi-user simultaneous interaction
+- Expanded domain knowledge
+- Integration with home automation systems
+- Mobile companion application
 
-# Activate virtual environment
-venv_name\Scripts\activate
-```
+### Contributing
 
-#### 3. Install Requirements
+Contributions are welcome! Please check the CONTRIBUTING.md file for guidelines.
 
-```bash
-pip install -r requirements.txt
-```
+### License
 
-#### 4. Run the User Detection System
-
-```bash
-# from the root dir Run the main script
-python3 main.py
-```
-
-#### More features coming soon!
+This project is licensed under the MIT License - see the LICENSE file for details.
+[LICENCE](LICENSE)

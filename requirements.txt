@@ -5,4 +5,6 @@ gtts>=2.2.0 # For text-to-speech conversion
 pygame>=2.0.0 # For audio playback from gtts
 vosk>=0.3.42 # For speech recognition
 sounddevice>=0.4.5 # For audio listening
-llama-cpp-python>=0.2.0
+llama-cpp-python>=0.2.0 # For LLaMA model interaction
+tqdm>=4.62.0 # For progress bars
+requests>=2.26.0 # For HTTP requests FOR MODEL DOWNLOAD
