@@ -8,6 +8,7 @@ import logging
 import sys
 import os
 import time
+from pygame import mixer  # for playing audio files
 
 # Add User_Detection to the system path to import modules
 sys.path.append(
@@ -15,7 +16,7 @@ sys.path.append(
 )
 
 from User_Detection.detect_user_by_face import detect_user
-from User_Detection.greet_user import initialize_audio, greet_user
+from Greet_User.greet_user import greet_user
 
 # Set up logging (sys logger instead of print because it's more flexible)
 logging.basicConfig(
@@ -36,7 +37,7 @@ def main() -> None:
     logger.info("Starting ADA system...")
 
     # Initialize audio system for greeting
-    initialize_audio()
+    mixer.init()
 
     # Initialize video capture (0 for default webcam)
     video_capture = cv2.VideoCapture(0)
@@ -57,7 +58,7 @@ def main() -> None:
             logger.info(f"User detected: {detected_user} (New user: {is_new_user})")
 
             # Greet the user with audio (non-blocking no stoping video feed)
-            greet_user(detected_user)
+            greet_user(detected_user, mixer)
 
             greeting_start_time = time.time()
             greeting_duration = 5  # Show greeting message for 5 seconds
@@ -114,6 +115,7 @@ def main() -> None:
         # Release resources and close windows
         video_capture.release()
         cv2.destroyAllWindows()
+        mixer.quit() # Clean up the audio mixer
         logger.info("ADA system stopped")
 
 

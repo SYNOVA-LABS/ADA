@@ -13,21 +13,13 @@ import time  # for time.sleep
 
 logger = logging.getLogger(__name__)
 
-
-def initialize_audio() -> None:
-    """
-    Initialize pygame mixer for audio playback.
-    """
-    mixer.init()
-    logger.info("Audio system initialized")
-
-
-def play_greeting_async(temp_filename: str) -> None:
+def play_greeting_async(temp_filename: str, mixer: mixer) -> None:
     """
     Play the greeting audio file asynchronously.
 
     Args:
         temp_filename (str): Path to the audio file
+        mixer (mixer): Pygame mixer instance for playing audio
     """
     try:
         mixer.music.load(temp_filename)
@@ -45,7 +37,7 @@ def play_greeting_async(temp_filename: str) -> None:
         logger.error(f"Error playing greeting: {e}")
 
 
-def greet_user(name: str) -> None:
+def greet_user(name: str, mixer: mixer) -> None:
     """
     Generate and play a personalized greeting for the user.
 
@@ -54,6 +46,7 @@ def greet_user(name: str) -> None:
 
     Args:
         name (str): The name of the user to greet
+        mixer (mixer): Pygame mixer instance for playing audio
     """
     logger.info(f"Greeting user: {name}")
 
@@ -77,7 +70,7 @@ def greet_user(name: str) -> None:
 
         # Play the audio in a separate thread so video continues
         greeting_thread = threading.Thread(
-            target=play_greeting_async, args=(temp_filename,)
+            target=play_greeting_async, args=(temp_filename, mixer)
         )
         greeting_thread.daemon = True  # daemon is a common word for background thread
         greeting_thread.start()
