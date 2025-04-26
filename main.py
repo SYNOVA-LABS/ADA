@@ -31,10 +31,6 @@ def init_systems() -> tuple:
     """
     logger.info("Starting ADA system...")
 
-    # Initialize audio system for greeting
-    mixer.init()
-    logger.info("Audio player system initialized.")
-
     # Initialize video capture (0 for default webcam)
     video_capture = cv2.VideoCapture(0)
 
@@ -43,6 +39,7 @@ def init_systems() -> tuple:
         return video_capture, False
 
     logger.info("Camera initialized successfully.")
+    
     return video_capture, True
 
 
@@ -255,7 +252,7 @@ def main() -> None:
                         f"User detected: {detected_user} (New user: {is_new_user})"
                     )
                     # Greet the user with audio (non-blocking)
-                    greet_user(detected_user, mixer)
+                    greet_user(detected_user)
                     greeting_start_time = time.time()
                 else:
                     logger.warning("No user was detected.")

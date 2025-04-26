@@ -19,7 +19,7 @@ MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Models/vo
 WAKE_WORDS = ["hey ada", "hey a.d.a", "ok ada", "hello ada", "ada"]
 
 
-def wake_word_detector():
+def wake_word_detector() -> bool:
     """
     Uses Vosk for wake word detection.
     
@@ -50,7 +50,7 @@ def wake_word_detector():
         
         while True:
             try:
-                data = q.get(timeout=2)
+                data = q.get(timeout=2) # 2 seconds timeout meaning it will wait for 2 seconds for data before trying again
                 if rec.AcceptWaveform(data):
                     result = json.loads(rec.Result())
                     text = result.get("text", "").lower()
