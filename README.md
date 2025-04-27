@@ -11,12 +11,24 @@ ADA is a modular, extensible personal assistant system that combines face recogn
 
 ### Modules
 
-- [**User Detection**](User_Detection/) - Recognizes users via face recognition for personalized interactions
+- [**User Detection**](User_Detection/) - Recognizes and stores users via face recognition for personalized interactions
 - [**Activator**](Activator/) - Handles wake word detection to activate the ADA system
 - [**TTS**](TTS/) - Text-to-Speech module for converting responses to spoken audio
 - [**User Input**](User_Input/) - Captures and processes speech input from users
 - [**Vision GPT**](Vision_GPT/) - Integrates visual input with GPT-4o for image analysis and answering questions
 - [**Models**](Models/) - Contains speech recognition models for local processing
+
+### Other Folders
+- [**Tests**](tests/) - Contains model tests, done using jupyter nookbooks
+- [**Assets**](assets/) - Contains the images and diagrams for social previews
+
+### Usefull Files
+- [**Start Script**](setup_and_run.sh) - This file sets up ada downloading all models and libraries, The setup script will guide you through installation and prompt for your OpenAI API key, once all requirements are satisfied this script will automatically start ADA.
+- [**Main**](main.py) - Starting point for the ADA system (running this file starts ADA only if you have all the requirments)
+- [**Env file**](.env) - Contains the OpenAI api key for the model (local file)
+- [**Git Ignore**](.gitignore) - Contains the files and folders too be ingored for tracking, this stops all sensitive data from being tracked for possibly uploaded to github
+- [**Requirements**](requirements.txt) - contains the python requirements (libraries) for the ADA system
+- [**Model Requirements**](model_requirements.py) - Handles the download of local models like vosk from the internet
 
 ### Key Features
 
@@ -56,7 +68,7 @@ Once ADA is running, activate it using any of these wake words:
 - "ADA"
 - "Hi"
 
-After saying a wake word, ADA will detect your presence and begin listening for your questions. You can ask questions about what the camera sees, and ADA will analyze the image and provide spoken responses.
+After saying a wake word, ADA will detect your presence and begin listening for your questions. You can ask questions about what the camera sees, and ADA will analyze the image and provide spoken responses. See the terminal for all logs related to the system
 
 #### Install Python (if you don't have Python)
 

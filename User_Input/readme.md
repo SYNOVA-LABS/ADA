@@ -1,13 +1,13 @@
 # User Input Module
 
-This module handles the capture, processing, and interpretation of various user inputs for the ADA (Advanced Digital Agent) system, enabling natural multimodal interactions.
+This module handles the capture, processing, and interpretation of various user inputs for the ADA (Advanced Digital Agent) system, enabling natural multimodal interactions. It uses the Vosk small model for speech regognition, this model is local and can be found in the Models folder.
 
 ## Overview
 
 The User Input module is responsible for:
 - Capturing speech input through microphone interfaces
-- Processing text input from connected devices
-- Integrating gesture recognition and other input modalities
+- Processing text input from connected devices using Vosk
+- Integrating gesture recognition and other input modalities (Coming soon....)
 - Providing a unified input stream to ADA's core processing system
 
 ## System Flowchart
@@ -50,7 +50,7 @@ flowchart TD
 
 ## Key Features
 
-- **Multimodal Input**: Supports speech, text, gesture, and other input forms
+- **Multimodal Input**: Supports speech, text, gesture, and other input forms (text and gestures coming soon...)
 - **Real-time Processing**: Low-latency input capture and interpretation
 - **Noise Filtering**: Improves input quality through signal processing
 - **Input Prioritization**: Intelligent handling of concurrent input streams
@@ -58,11 +58,11 @@ flowchart TD
 
 ## Implementation
 
-- Uses speech recognition models for audio input processing
+- Uses speech recognition models for audio input processing (Vosk English small model)
 - Implements input queueing for handling multiple input sources
 - Features configurable noise reduction and signal enhancement
 - Provides fallback mechanisms when primary input methods fail
-- Includes activation phrases for hands-free operation
+- Includes activation phrases for hands-free operation (Coming Soon...)
 
 ## Integration & Configuration
 
