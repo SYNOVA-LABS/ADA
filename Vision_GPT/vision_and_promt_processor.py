@@ -26,6 +26,11 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     logger.warning("OPENAI_API_KEY not found in environment variables")
 
+# Define log directory
+LOG_DIR = os.path.join(os.path.dirname(__file__), "logs")
+# Session history file path (now in the same logs folder)
+SESSION_HISTORY_PATH = os.path.join(LOG_DIR, "session_history.log")
+
 def encode_image_to_base64(image_array):
     """Convert a numpy array (OpenCV image) to base64 string."""
     # Convert from BGR (OpenCV) to RGB (PIL)
@@ -39,6 +44,25 @@ def encode_image_to_base64(image_array):
     # Get the byte data and encode to base64
     img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return img_str
+
+def get_session_history():
+    """
+    Read the current session history to provide as context.
+    
+    Returns:
+        str: The session history as a string, or empty string if not available
+    """
+    try:
+        if os.path.exists(SESSION_HISTORY_PATH):
+            with open(SESSION_HISTORY_PATH, 'r') as f:
+                # Skip the header lines (first 3 lines)
+                lines = f.readlines()
+                if len(lines) > 3:
+                    return ''.join(lines[3:])
+        return ""
+    except Exception as e:
+        logger.error(f"Error reading session history: {e}")
+        return ""
 
 def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
     """
@@ -63,7 +87,10 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
             "Authorization": f"Bearer {OPENAI_API_KEY}"
         }
         
-        # Create a detailed system prompt that explains capabilities
+        # Get session history for context
+        session_history = get_session_history()
+        
+        # Create a detailed system prompt that explains capabilities and includes session history
         system_prompt = """
         You are an advanced vision assistant that can:
         1. Read and interpret text in images (OCR)
@@ -75,6 +102,10 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
         Provide direct, concise answers based on what you see in the image.
         If you cannot determine something with confidence, acknowledge that limitation.
         """
+        
+        # Add session history to system prompt if available
+        if session_history:
+            system_prompt += "\n\nHere is the conversation history from this session that you can use for context:\n" + session_history
         
         payload = {
             "model": "gpt-4o",  # Updated to use gpt-4o which supports vision capabilities
@@ -145,12 +176,12 @@ def analyze_image_with_question(frame, question: str) -> str:
         logger.info(f"Processing question with image: {question}")
         
         # Log directory for storing analysis details
-        log_dir = os.path.join(os.path.dirname(__file__), "logs")
+        log_dir = LOG_DIR
         os.makedirs(log_dir, exist_ok=True)
         
         # Log the received question and timestamp
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        log_file = os.path.join(log_dir, f"vision_gpt_analysis.log")
+        log_file = os.path.join(log_dir, f"vision_gpt_analysis_history.log")
         
         # Process the image and question
         result = process_with_vision_api(frame, question)
@@ -162,9 +193,6 @@ def analyze_image_with_question(frame, question: str) -> str:
         with open(log_file, "a") as f:
             f.write(f"[{timestamp}] Question: {question}\n")
             f.write(f"[{timestamp}] Answer: {answer}\n\n")
-            
-        # Optionally save the frame for debugging
-        # cv2.imwrite(os.path.join(log_dir, f"{timestamp}_frame.jpg"), frame)
         
         return answer
         

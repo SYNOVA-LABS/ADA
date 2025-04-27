@@ -4,6 +4,8 @@ the script captures video from the webcam, detects faces, and recognizes them ag
 this way we can recognize users and store their faces to then give them access to the system with their personalized settings.
 """
 
+import pickle
+import sqlite3
 import cv2
 import os
 import numpy as np
@@ -12,7 +14,9 @@ import time
 import hashlib
 import logging
 from datetime import datetime
-from .db_handler import load_face_data, store_face_data
+
+from User_Detection.new_user_input import generate_unique_username, get_user_input_opencv
+from .db_handler import DB_PATH, load_face_data, store_face_data
 
 logger = logging.getLogger(__name__)
 
@@ -208,3 +212,162 @@ def detect_user(video_capture: cv2.VideoCapture) -> tuple:
         process_this_frame = not process_this_frame  # Toggle the process_this_frame variable to process every other frame if we did this frame skip the next one and vice versa
 
     return None, False  # if no user was detected return None and False
+
+
+def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tuple:
+    """
+    Detect and identify a user from video feed, but don't register new users immediately.
+    
+    This function is similar to detect_user(), but it returns the face image for new users
+    instead of registering them, allowing the main thread to handle user registration.
+
+    Parameters:
+        video_capture: OpenCV VideoCapture object with an active video feed
+
+    Returns:
+        tuple: (recognized_name, is_new_user, needs_registration, face_image)
+            - recognized_name (str): The name of the recognized user or a temporary ID
+            - is_new_user (bool): Whether the user was newly detected
+            - needs_registration (bool): Whether this user needs to be registered
+            - face_image (numpy.ndarray): The face image for registration, or None if not needed
+    """
+    # Load known faces from database
+    known_face_encodings, known_face_names = load_known_faces()
+    
+    # Check if webcam is opened
+    if not video_capture.isOpened():
+        logger.error("Failed to open webcam")
+        return None, False, False, None
+
+    logger.info("Starting face recognition system...")
+
+    # Variables for processing
+    face_locations = []
+    face_encodings = []
+    process_this_frame = True
+    temp_user_id = None
+    face_image = None
+
+    # Main detection loop - just a few frames to detect the user
+    for _ in range(10):  # Try up to 10 frames to find a face
+        # Capture frame
+        ret, frame = video_capture.read()
+        if not ret:
+            logger.error("Failed to capture frame")
+            break
+
+        # Process every other frame
+        if process_this_frame:
+            # Resize and convert frame
+            small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+
+            # Detect faces
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+
+            # Check if any faces were detected
+            if face_encodings:
+                # We'll work with the first face only
+                face_encoding = face_encodings[0]
+                
+                # Check if face matches any known faces
+                matches = face_recognition.compare_faces(
+                    known_face_encodings, face_encoding, tolerance=0.6
+                )
+                
+                # If we found a match, return the name
+                if True in matches:
+                    first_match_index = matches.index(True)
+                    name = known_face_names[first_match_index]
+                    logger.info(f"Face recognized: {name}")
+                    return name, False, False, None
+                else:
+                    # This is a new user - extract the face image
+                    top, right, bottom, left = face_locations[0]
+                    top *= 4
+                    right *= 4
+                    bottom *= 4
+                    left *= 4
+                    
+                    # Extract face from the original frame
+                    face_image = frame[top:bottom, left:right]
+                    
+                    # Generate a temporary ID
+                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                    hash_object = hashlib.md5(str(time.time()).encode())
+                    unique_id = hash_object.hexdigest()[:6]
+                    temp_user_id = f"User_{timestamp}_{unique_id}"
+                    
+                    logger.info(f"New face detected, needs registration")
+                    return temp_user_id, True, True, face_image
+
+        process_this_frame = not process_this_frame
+
+    # If we got here, no faces were detected
+    return None, False, False, None
+
+
+def register_new_user(face_image: np.ndarray) -> tuple:
+    """
+    Register a new user with the provided face image.
+    
+    This function should be called from the main thread to ensure
+    the OpenCV windows can be displayed properly.
+    
+    Parameters:
+        face_image (numpy.ndarray): The face image to register
+        
+    Returns:
+        tuple: (face_id, name, auth)
+            - face_id (str): The unique ID assigned to this face
+            - name (str): The name provided by the user
+            - auth (str): The authorization level
+    """
+    if face_image is None:
+        logger.error("No face image provided for registration")
+        return None, None, None
+    
+    # Generate a unique ID
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    hash_object = hashlib.md5(str(time.time()).encode())
+    unique_id = hash_object.hexdigest()[:8]
+    face_id = f"{timestamp}_{unique_id}"
+
+    # Create the filename and save the image
+    filename = f"{face_id}.jpg"
+    file_path = os.path.join(FACES_FOLDER, filename)
+    cv2.imwrite(file_path, face_image)
+    logger.info(f"New face image saved: {file_path}")
+
+    # Get the face encoding
+    rgb_face_image = cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB)
+    face_encoding = face_recognition.face_encodings(rgb_face_image)[0]
+
+    # Get user input for name and auth using OpenCV window
+    try:
+        name, auth = get_user_input_opencv(face_image)
+    except Exception as e:
+        logger.error(f"Error getting user input: {e}")
+        name = generate_unique_username()
+        auth = "guest"
+    
+    # Store in database
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        encoding_blob = pickle.dumps(face_encoding)
+        cursor.execute(
+            """
+            INSERT INTO faces (face_id, name, authorization, encoding, image_path, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (face_id, name, auth, encoding_blob, file_path, datetime.now()),
+        )
+        conn.commit()
+        conn.close()
+        logger.info(f"Stored new face in database: {name} (ID: {face_id}, Auth: {auth})")
+    except Exception as e:
+        logger.error(f"Error storing face data: {e}")
+
+    return face_id, name, auth

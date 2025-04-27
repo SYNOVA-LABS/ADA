@@ -8,10 +8,11 @@ import cv2  # OpenCV for video capture for user to see themselves
 import logging
 import time
 import threading
+import os
 from pygame import mixer  # for playing audio files
 
 # Add User_Detection to the system path to import modules
-from User_Detection.detect_user_by_face import detect_user
+from User_Detection.detect_user_by_face import detect_user, detect_user_with_registration_check, register_new_user
 from Activator.listener import wake_word_detector
 from User_Input.get_user_input import get_user_question
 from Vision_GPT.vision_and_promt_processor import analyze_image_with_question
@@ -23,6 +24,50 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Global session history file path - now in Vision_GPT logs folder
+SESSION_HISTORY_PATH = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Vision_GPT", "logs"), "session_history.log")
+
+def init_session_history():
+    """
+    Initialize the session history log file.
+    This file will store Q&A pairs without timestamps for LLM context.
+    """
+    try:
+        # Create or truncate the session history file
+        with open(SESSION_HISTORY_PATH, 'w') as f:
+            f.write("ADA SESSION HISTORY\n")
+            f.write("==================\n\n")
+        logger.info(f"Session history initialized at {SESSION_HISTORY_PATH}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to initialize session history: {e}")
+        return False
+
+def add_to_session_history(question, answer):
+    """
+    Add a Q&A pair to the session history log.
+    
+    Args:
+        question: The user's question
+        answer: ADA's response
+    """
+    try:
+        with open(SESSION_HISTORY_PATH, 'a') as f:
+            f.write(f"Q: {question}\n")
+            f.write(f"A: {answer}\n\n")
+    except Exception as e:
+        logger.error(f"Failed to update session history: {e}")
+
+def cleanup_session_history():
+    """
+    Clean up the session history file.
+    """
+    try:
+        if os.path.exists(SESSION_HISTORY_PATH):
+            logger.info(f"Session history saved at {SESSION_HISTORY_PATH}")
+    except Exception as e:
+        logger.error(f"Error handling session history cleanup: {e}")
+
 
 def init_systems() -> tuple:
     """
@@ -32,6 +77,11 @@ def init_systems() -> tuple:
         tuple: (video_capture, success) where success is a boolean indicating if initialization was successful
     """
     logger.info("Starting ADA system...")
+
+    # Initialize session history
+    history_success = init_session_history()
+    if not history_success:
+        logger.warning("Failed to initialize session history, continuing without it")
 
     # Initialize video capture (0 for default webcam)
     video_capture = cv2.VideoCapture(0)
@@ -99,15 +149,19 @@ def perform_user_detection(video_capture: cv2.VideoCapture, detection_status: di
     """
     logger.info("Starting user detection in thread...")
     try:
-        # Detect user once
-        detected_user, is_new_user = detect_user(video_capture)
+        # We need to use the main thread for user input dialogs
+        # Just detect if there's a face and whether it's recognized
+        # Flag if a new user needs to be registered, but don't register yet
+        detected_user, is_new_user, needs_registration, face_image = detect_user_with_registration_check(video_capture)
         
         # Pass results back through the shared dictionary
         detection_status["complete"] = True
         detection_status["user"] = detected_user
         detection_status["is_new"] = is_new_user
+        detection_status["needs_registration"] = needs_registration
+        detection_status["face_image"] = face_image
         
-        logger.info(f"Detection thread completed: user={detected_user}, is_new={is_new_user}")
+        logger.info(f"Detection thread completed: user={detected_user}, is_new={is_new_user}, needs_registration={needs_registration}")
     except Exception as e:
         logger.error(f"Error in detection thread: {e}")
         detection_status["complete"] = True
@@ -228,6 +282,9 @@ def activate_ada(frame: cv2.Mat) -> None:
                 vision_response = analyze_image_with_question(current_frame_copy, result)
                 activate_ada.vision_response = vision_response
                 logger.info(f"Vision response: {vision_response}")
+                
+                # Add to session history
+                add_to_session_history(result, vision_response)
                 
                 # Play the response using TTS only once
                 if vision_response and vision_response.strip() and not activate_ada.response_played:
@@ -475,10 +532,11 @@ def main() -> None:
         is_new_user = False
         detection_thread = None
         greeting_start_time = 0
+        face_registration_done = False  # New flag to track if registration is complete
 
         # Use dictionaries to track status between threads and main function
         wake_word_status = {"detected": False}
-        detection_status = {"complete": False, "user": None, "is_new": False, "error": None}
+        detection_status = {"complete": False, "user": None, "is_new": False, "needs_registration": False, "face_image": None, "error": None}
 
         logger.info("Waiting for wake word activation...")
 
@@ -522,6 +580,7 @@ def main() -> None:
                 detection_thread.start()
                 
                 detection_started = True
+                face_registration_done = False  # Reset registration flag
                 logger.info("User detection started in background thread")
             
             # Check if detection is complete
@@ -543,6 +602,39 @@ def main() -> None:
                     detected_user = detection_status["user"]
                     is_new_user = detection_status["is_new"]
                     
+                    # Handle new user registration if needed
+                    if detection_status.get("needs_registration", False) and not face_registration_done:
+                        # Show registration message
+                        cv2.putText(
+                            frame,
+                            "New user detected! Please enter your name...",
+                            (20, 80),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.8,
+                            (0, 255, 255),
+                            2,
+                        )
+                        cv2.imshow("ADA System", frame)
+                        cv2.waitKey(1)  # Update the display
+                        
+                        try:
+                            # Get the face image from the detection thread
+                            face_image = detection_status.get("face_image")
+                            if face_image is not None:
+                                # Register the new user in the main thread so dialog windows work properly
+                                face_id, name, auth = register_new_user(face_image)
+                                if name:
+                                    detected_user = name
+                                    logger.info(f"New user registered: {name} (ID: {face_id}, Auth: {auth})")
+                                face_registration_done = True
+                            else:
+                                logger.error("Face image not available for registration")
+                                face_registration_done = True  # Skip registration
+                        except Exception as e:
+                            logger.error(f"Error during user registration: {e}")
+                            face_registration_done = True  # Mark as done even on error
+                    
+                    # Only proceed with user detection if we have a user
                     if detected_user:
                         user_detected = True
                         logger.info(
@@ -597,6 +689,10 @@ def main() -> None:
         video_capture.release()
         cv2.destroyAllWindows()
         mixer.quit()  # Clean up the audio mixer
+        
+        # Clean up session history
+        cleanup_session_history()
+        
         logger.info("ADA system stopped")
 
 
