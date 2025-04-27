@@ -9,17 +9,20 @@ The Vision GPT module is responsible for:
 - Analyzing images for objects, text (OCR), people, and scenes
 - Performing logical reasoning about visual information
 - Providing direct answers to complex visual questions
+- Maintaining conversation context through session history
 
 ## System Flowchart
 
 ```mermaid
 flowchart TD
     A[Start Vision GPT] --> B[Get Frame & Question]
-    B --> C[Encode Image to Base64]
-    C --> D[Prepare API Request]
+    B --> S[Retrieve Session History]
+    S --> C[Encode Image to Base64]
+    C --> D[Prepare API Request with Context]
     D --> E[Send to GPT-4o API]
     E --> F[Process Response]
     F --> G[Return Direct Answer]
+    F --> H1[Record Q&A in Session History]
     
     H[Error Handling] -.- C
     H -.- E
@@ -28,6 +31,8 @@ flowchart TD
     style E fill:#d9f2d9,stroke:#009900
     style G fill:#e6ccff,stroke:#8000ff
     style H fill:#ffb3b3,stroke:#cc0000
+    style S fill:#ffe6cc,stroke:#ff9933
+    style H1 fill:#ffe6cc,stroke:#ff9933
 ```
 
 ## Key Features
@@ -37,6 +42,22 @@ flowchart TD
 - **Logical Reasoning**: Performs calculations and logical operations on visual data
 - **Multimodal Understanding**: Combines visual and linguistic understanding
 - **Real-Time Processing**: Provides answers with minimal latency
+- **Contextual Awareness**: Maintains conversation history for more coherent interactions
+
+## Context and Session History
+
+The Vision GPT module maintains an ongoing record of the conversation to provide context:
+
+- **Session History**: All Q&A pairs from the current session are logged to a session history file
+- **Contextual Memory**: Previous questions and answers are provided to the model as context
+- **Enhanced Understanding**: This allows the model to reference previous information and maintain conversation coherence
+- **Memory Management**: The system initializes a fresh session at startup and records all interactions
+
+The session history provides crucial context that allows ADA to:
+- Remember previous questions and answers
+- Understand follow-up questions
+- Maintain coherent multi-turn conversations
+- Refer back to previously established information
 
 ## Implementation Details
 
@@ -45,6 +66,7 @@ flowchart TD
 - Implements proper error handling and logging
 - Configurable through environment variables
 - Optimized for real-time performance in the ADA system
+- Provides session history as context for improved conversational abilities
 
 ## Configuration
 
@@ -59,9 +81,12 @@ Run the setup and start script (instuctions in readme) and then input you openai
 
 ### Core Function:
 - `analyze_image_with_question(frame, question)`: Main entry point that processes frames and questions together
+- `get_session_history()`: Retrieves the current session's conversation history for context
 
 ### Example Flow:
 1. User asks: "What's the sum of fingers I'm holding up?"
-2. Module sends both the question and current frame to the API
-3. GPT-4o analyzes the image, counts fingers, and performs calculation
-4. The answer is returned directly to the user
+2. System retrieves the current session history for context
+3. Module sends the question, current frame, and conversation context to the API
+4. GPT-4o analyzes the image, counts fingers, and performs calculation
+5. The answer is returned directly to the user
+6. The question and answer are recorded in session history for future context
