@@ -106,6 +106,7 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
         # Add session history to system prompt if available
         if session_history:
             system_prompt += "\n\nHere is the conversation history from this session that you can use for context:\n" + session_history
+            logger.info("Session history included in the prompt.")
         
         payload = {
             "model": "gpt-4o",  # Updated to use gpt-4o which supports vision capabilities

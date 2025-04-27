@@ -11,12 +11,12 @@ import threading
 import os
 from pygame import mixer  # for playing audio files
 
-# Add User_Detection to the system path to import modules
+# Update imports to include the new function
 from User_Detection.detect_user_by_face import detect_user, detect_user_with_registration_check, register_new_user
 from Activator.listener import wake_word_detector
 from User_Input.get_user_input import get_user_question
 from Vision_GPT.vision_and_promt_processor import analyze_image_with_question
-from TTS.text_to_speech import play_response_async
+from TTS.text_to_speech import play_response_async, is_audio_playing
 
 # Set up logging (sys logger instead of print because it's more flexible)
 logging.basicConfig(
@@ -228,16 +228,16 @@ def activate_ada(frame: cv2.Mat) -> None:
     if not hasattr(activate_ada, "question_thread"):
         activate_ada.question_thread = None
         activate_ada.current_question = None
-        activate_ada.question_time = None  # Initialize to current time, not None
+        activate_ada.question_time = None
         activate_ada.current_response = None
         activate_ada.processing_question = False
         activate_ada.vision_response = None
         activate_ada.last_processed_question = None
         activate_ada.response_played = False
         activate_ada.listening_for_new_question = True
-        activate_ada.last_listening_start = time.time()  # Initialize with current time
-        activate_ada.last_reset_time = time.time()  # Initialize with current time
-        activate_ada.display_until = 0  # New: track when to clear display
+        activate_ada.last_listening_start = time.time()
+        activate_ada.last_reset_time = time.time()
+        activate_ada.display_until = 0
     
     # Function to check for questions
     def check_for_question():
@@ -267,13 +267,13 @@ def activate_ada(frame: cv2.Mat) -> None:
                 
                 # Store the new question and reset state
                 activate_ada.current_question = result
-                activate_ada.question_time = time.time()  # Set the time here
+                activate_ada.question_time = time.time()
                 activate_ada.last_processed_question = result
                 activate_ada.response_played = False
                 logger.info(f"User asked: {result}")
                 
-                # Set display timeout 
-                activate_ada.display_until = time.time() + 15  # Show for 15 seconds
+                # Set display timeout - show for 15 seconds or until next question
+                activate_ada.display_until = time.time() + 15
                 
                 # Create a copy of the current frame to send for processing
                 current_frame_copy = frame.copy()
@@ -310,27 +310,23 @@ def activate_ada(frame: cv2.Mat) -> None:
             return
         
         # After processing, reset the state to listen for a new question
-        # This timer ensures we don't immediately start listening again
+        # This function now checks if audio is still playing
         def reset_listening_state():
             try:
-                # Longer timeout (5 seconds) to ensure we don't pick up the same input twice
-                time.sleep(5)
-                activate_ada.processing_question = False
+                # Wait for audio playback to complete instead of fixed delay
+                while is_audio_playing():
+                    time.sleep(0.5)  # Check every half second
                 
-                # Only set listening to true if enough time has passed since the last question
-                # Make sure question_time is not None before doing comparison
-                if activate_ada.question_time is not None and time.time() - activate_ada.question_time > 7:
-                    activate_ada.listening_for_new_question = True
-                    # Update the timestamp when we start listening again
-                    activate_ada.last_listening_start = time.time()
-                    activate_ada.last_reset_time = time.time()
-                    logger.info("Ready for next question")
-                else:
-                    # If not enough time has passed, set a timer to check again
-                    activate_ada.listening_for_new_question = True
-                    activate_ada.last_listening_start = time.time()
-                    activate_ada.last_reset_time = time.time()
-                    logger.info("Ready for next question (early reset)")
+                # Once audio has finished, a small buffer to prevent immediate reactivation
+                time.sleep(1)
+                
+                # Reset states
+                activate_ada.processing_question = False
+                activate_ada.listening_for_new_question = True
+                activate_ada.last_listening_start = time.time()
+                activate_ada.last_reset_time = time.time()
+                logger.info("Audio playback completed - Ready for next question")
+                
             except Exception as e:
                 logger.error(f"Error in reset_listening_state: {e}")
                 # Emergency reset
@@ -344,7 +340,7 @@ def activate_ada(frame: cv2.Mat) -> None:
         reset_thread.daemon = True
         reset_thread.start()
     
-    # Emergency recovery - if the system seems stuck
+    # Safety checks and recovery code
     current_time = time.time()
     
     # Safety check - make sure these attributes exist with valid values
@@ -354,7 +350,7 @@ def activate_ada(frame: cv2.Mat) -> None:
     if not hasattr(activate_ada, "question_time") or activate_ada.question_time is None:
         activate_ada.question_time = current_time
     
-    # If we've been stuck for more than 30 seconds, force a reset
+    # Emergency recovery - if the system seems stuck for more than 30 seconds
     if current_time - activate_ada.last_reset_time > 30:
         logger.info("Periodic safety reset")
         activate_ada.processing_question = False
@@ -366,13 +362,11 @@ def activate_ada(frame: cv2.Mat) -> None:
     # 1. Not already running
     # 2. Not currently processing a question
     # 3. We're ready to listen for a new question
-    # 4. At least 5 seconds have passed since we last started listening
-    listening_cooldown_passed = (current_time - activate_ada.last_listening_start) > 5
-    
+    # 4. Audio is not currently playing
     if (activate_ada.question_thread is None or not activate_ada.question_thread.is_alive()) and \
        not activate_ada.processing_question and \
        activate_ada.listening_for_new_question and \
-       listening_cooldown_passed:
+       not is_audio_playing():
         logger.info("Starting new listening thread")
         activate_ada.question_thread = threading.Thread(target=check_for_question)
         activate_ada.question_thread.daemon = True
@@ -482,9 +476,8 @@ def activate_ada(frame: cv2.Mat) -> None:
     # Always show the system is active
     status_text = "ADA system active"
     if activate_ada.listening_for_new_question and not activate_ada.processing_question:
-        cooldown_remaining = max(0, 5 - (time.time() - activate_ada.last_listening_start))
-        if cooldown_remaining > 0:
-            status_text += f" - Ready in {int(cooldown_remaining)}s"
+        if is_audio_playing():
+            status_text += " - Playing response"
         else:
             status_text += " - Ready for question"
         

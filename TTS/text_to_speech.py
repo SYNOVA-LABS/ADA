@@ -8,40 +8,69 @@ import time
 import tempfile
 from gtts import gTTS
 from pygame import mixer
+import threading
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
+# Global variable to track playback status
+tts_playback_status = {"playing": False}
+
 def play_response_async(response: str) -> None:
     """
-    Convert the text response to speech and play it asynchronously.
+    Convert text to speech and play it asynchronously.
     
     Args:
-        response: The text response to speak
+        response: The text to convert to speech
     """
+    if not response or not response.strip():
+        logger.warning("Empty response, nothing to play")
+        return
+        
     try:
-        # Create a temporary file for the audio
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-            temp_filename = temp_file.name
+        # Mark that playback has started
+        tts_playback_status["playing"] = True
         
-        # Generate the speech audio
-        tts = gTTS(text=response, lang="en", slow=False)
-        tts.save(temp_filename)
-        logger.info("Speech generated for LLM response")
-        
-        # Initialize the mixer if not already initialized
+        # Initialize mixer if not already initialized
         if not mixer.get_init():
             mixer.init()
+            
+        # Create a temporary file to store the audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+            temp_path = temp_file.name
+            
+        # Generate the audio file
+        tts = gTTS(text=response, lang='en', slow=False)
+        tts.save(temp_path)
         
-        mixer.music.load(temp_filename)
+        # Play the audio file
+        mixer.music.load(temp_path)
         mixer.music.play()
         
-        # Wait for the audio to finish playing
+        # Wait for playback to complete
         while mixer.music.get_busy():
             time.sleep(0.1)
-        
+            
         # Clean up the temporary file
-        os.unlink(temp_filename)
-        logger.info("Response playback complete")
+        try:
+            os.unlink(temp_path)
+        except Exception as e:
+            logger.error(f"Error removing temporary audio file: {e}")
+            
+        # Mark that playback has finished
+        tts_playback_status["playing"] = False
+        logger.info("TTS playback completed")
+        
     except Exception as e:
-        logger.error(f"Error playing response: {e}")
+        logger.error(f"Error in text-to-speech: {e}")
+        # Make sure to reset playback status even if there's an error
+        tts_playback_status["playing"] = False
+
+def is_audio_playing() -> bool:
+    """
+    Check if TTS audio is currently playing.
+    
+    Returns:
+        bool: True if audio is playing, False otherwise
+    """
+    return tts_playback_status["playing"]
