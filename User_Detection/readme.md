@@ -80,7 +80,7 @@ flowchart TD
 2. **Face Recognition**: Compares detected faces against database of known faces
 3. **User Management**: Adds new faces to database with user-provided information
 4. **Database Storage**: Stores face encodings, images, and user information in SQLite
-5. **Real-time Feedback**: Shows recognized users with name labels
+5. **Real-time Feedback**: recognizes users in real time prompting new user input if not recognized
 
 ## Implementation Details
 

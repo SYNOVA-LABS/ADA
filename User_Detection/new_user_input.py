@@ -125,37 +125,7 @@ def get_user_input_opencv(face_image: cv2.Mat) -> tuple:
         elif 32 <= key <= 126:  # Printable ASCII characters
             input_name += chr(key)
 
-    # Now ask for authorization if name was provided else default to guest
-    if not name.startswith("User_"):
-        auth_display = display_img.copy()
-        cv2.putText(
-            auth_display,
-            f"Name: {name}",
-            (10, 130),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2,
-        )
-        cv2.putText(
-            auth_display,
-            "Authorization: (g)uest, (u)ser, (a)dmin",
-            (10, 170),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2,
-        )
-        cv2.imshow("New User", auth_display)
-
-        # Get authorization level
-        key = cv2.waitKey(0) & 0xFF
-        if key == ord("a"):
-            auth = "admin"
-        elif key == ord("u"):
-            auth = "user"
-        else:
-            auth = "guest"
+    auth = "guest"  # default value for now 
 
     # Close window
     cv2.destroyWindow("New User")

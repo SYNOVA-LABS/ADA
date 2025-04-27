@@ -1,21 +1,18 @@
+# Python (virtual environment and cache)
+venv/
+__pycache__/
+
+# Sensitive data (keys, faces, face data, history logs)
+.env
+user_faces/
+face_data.db
+logs/
+
+# Models
+Models/vosk-*
+
 # local
 .qodo
 
 # misc
 *.DS_Store
-
-# Python
-venv/
-__pycache__/
-
-# Sensitive data
-.env
-user_faces/
-face_data.db
-
-# Models
-Models/vosk-*
-Models/tinyllama-*
-
-# logs (includes sensitive data like conversations)
-logs/

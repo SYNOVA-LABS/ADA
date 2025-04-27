@@ -37,7 +37,7 @@ ADA is a modular, extensible personal assistant system that combines face recogn
 - **Vision-based Q&A** - Answers questions about what the camera sees
 - **Natural Speech Interaction** - Processes spoken questions and provides spoken responses
 - **User Registration** - Adds new users to the system for future recognition
-- **Session Logging** - Maintains history of interactions for reference
+- **Session Logging** - Maintains history of interactions in current session for reference and an all time history with all interactions with ADA.
 - **Real-time Visual Feedback** - Displays system status and responses on screen
 
 ### Getting Started
@@ -59,6 +59,11 @@ The script will:
 3. Prompt you for your OpenAI API key
 4. Launch the ADA application
 
+> [!IMPORTANT]
+> <span style="color:purple">ADA maintains a session history that records all Q&A interactions during your current session. This history is used to provide context to the model, allowing for more coherent multi-turn conversations. There is also a All time history log that includes all conversations with ADA up-to date. Additionally the User Detection module keeps images of all user faces it has regognized so far under the 'user_faces' subfolder, there is also a db that has the face encodings which are linked with the face image and aditional info. All face data, that is the face images and encodings that are used to identify the user are only stored locally and are not tracked or transmitted to anyone. Additionally all session history and all time history with the model is also kept locally and is not tracked. See the gitignore for all the files that are ingored under the (sensitive data) section for more info.</span>
+
+
+
 #### Using ADA with Wake Words
 Once ADA is running, activate it using any of these wake words:
 - "Hey ADA"
@@ -69,6 +74,9 @@ Once ADA is running, activate it using any of these wake words:
 - "Hi"
 
 After saying a wake word, ADA will detect your presence and begin listening for your questions. You can ask questions about what the camera sees, and ADA will analyze the image and provide spoken responses. See the terminal for all logs related to the system
+
+> [!IMPORTANT]
+> <span style="color:purple">Each interaction with ADA uses your OpenAI API credits. No conversation data is transmitted except to the OpenAI API during direct requests.</span>
 
 #### Install Python (if you don't have Python)
 
