@@ -82,19 +82,38 @@ fi
 
 # 4. Setup OpenAI API key
 echo -e "${YELLOW}Step 4/5: Setting up OpenAI API key...${NC}"
-echo "ADA now uses OpenAI's GPT model for improved performance."
-echo -e "Please enter your ${BLUE}OpenAI API key${NC} (starts with 'sk-'):"
-read -p "> " OPENAI_API_KEY
 
-# Validate API key format - using a much more flexible pattern that accepts modern OpenAI keys
-if [[ ! $OPENAI_API_KEY =~ ^sk-[a-zA-Z0-9_\-]+$ ]]; then
-    echo -e "${YELLOW}Warning: The key you entered may not be in the correct format.${NC}"
-    echo "Keys typically start with 'sk-' followed by alphanumeric characters, hyphens, and underscores."
-    read -p "Continue anyway? (y/n) " CONTINUE
-    if [[ ! $CONTINUE =~ ^[Yy]$ ]]; then
-        echo -e "${RED}Setup cancelled. Please run the script again with a valid API key.${NC}"
-        exit 1
+# Check if .env file already exists with a valid API key
+EXISTING_API_KEY=""
+if [ -f ".env" ]; then
+    EXISTING_API_KEY=$(grep -o 'OPENAI_API_KEY=sk-[a-zA-Z0-9_\-]\+' .env | cut -d= -f2)
+fi
+
+if [[ -n "$EXISTING_API_KEY" ]]; then
+    echo -e "${GREEN}Found existing OpenAI API key in .env file.${NC}"
+    echo -e "Using existing key: ${BLUE}${EXISTING_API_KEY:0:10}...${NC}"
+    OPENAI_API_KEY=$EXISTING_API_KEY
+else
+    echo "ADA now uses OpenAI's GPT model for improved performance."
+    echo -e "Please enter your ${BLUE}OpenAI API key${NC} (starts with 'sk-'):"
+    read -p "> " OPENAI_API_KEY
+
+    # Validate API key format - using a much more flexible pattern that accepts modern OpenAI keys
+    if [[ ! $OPENAI_API_KEY =~ ^sk-[a-zA-Z0-9_\-]+$ ]]; then
+        echo -e "${YELLOW}Warning: The key you entered may not be in the correct format.${NC}"
+        echo "Keys typically start with 'sk-' followed by alphanumeric characters, hyphens, and underscores."
+        read -p "Continue anyway? (y/n) " CONTINUE
+        if [[ ! $CONTINUE =~ ^[Yy]$ ]]; then
+            echo -e "${RED}Setup cancelled. Please run the script again with a valid API key.${NC}"
+            exit 1
+        fi
     fi
+
+    # Create or update .env file with the API key
+    echo "# OpenAI API key for Vision GPT module" > .env
+    echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+    check_status "Saving API key"
+    echo -e "${GREEN}API key saved successfully.${NC}\n"
 fi
 
 # Create or update .env file with the API key

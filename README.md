@@ -70,6 +70,17 @@ brew install python3
 2. Run the installer and make sure to check "Add Python to PATH"
 3. Verify installation by opening command prompt and typing `python --version`
 
+### Models and API's
+- Vosk small, for voice recognition (see the Models folders readme for more info)
+- GPT-4o: OpenAI's multimodal model that powers ADA's vision capabilities
+  - **Functionality**: Processes both images and text to answer questions about visual content
+  - **Capabilities**: Object recognition, text reading (OCR), scene analysis, counting, and logical reasoning
+  - **Cost Estimate**: 
+    - Approximately $0.01-0.05 per question (varies with image size and complexity)
+    - $5-10 for ~100-500 typical interactions
+    - Based on OpenAI's pricing of $5 per 1M input tokens and $15 per 1M output tokens
+    - Each image counts as approximately 1,000 tokens depending on resolution
+
 ### System Requirements
 
 - Python 3.10 or higher
@@ -78,15 +89,6 @@ brew install python3
 - Microphone for voice input
 - Internet connection for OpenAI API access
 - OpenAI API key with access to GPT-4o
-
-### Future Development
-
-- Enhanced gesture recognition capabilities 
-- Text input support alongside voice
-- Multi-user simultaneous interaction
-- Expanded offline functionality
-- Integration with home automation systems
-- Mobile companion application
 
 ### License
 
