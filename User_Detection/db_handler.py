@@ -5,7 +5,6 @@ Handles storing and retrieving face data using SQLite.
 
 import os
 import sqlite3
-import numpy as np
 import pickle
 import logging
 import cv2
@@ -113,7 +112,7 @@ def load_face_data() -> tuple:
     )  # return the list of encodings and names
 
 
-def store_face_data(face_id: str, face_encoding: np.ndarray, image_path: str) -> str:
+def store_face_data(face_id: str, face_encoding, image_path: str) -> str:
     """
     Store new face data in the database.
 

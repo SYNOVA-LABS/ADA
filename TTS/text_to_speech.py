@@ -5,15 +5,14 @@ this module provides a function to play any response of ada via text-to-speech (
 import logging
 import os
 import time
-import tempfile
-from gtts import gTTS
-from pygame import mixer
-import threading
+import tempfile # no saving the audio file to disk
+from gtts import gTTS # Google Text-to-Speech
+from pygame import mixer # to play audio files 
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Global variable to track playback status
+# Global variable to track playback status helps to avoid multiple simultaneous TTS playback
 tts_playback_status = {"playing": False}
 
 def play_response_async(response: str) -> None:
@@ -49,7 +48,7 @@ def play_response_async(response: str) -> None:
         
         # Wait for playback to complete
         while mixer.music.get_busy():
-            time.sleep(0.1)
+            time.sleep(0.1) # Sleep to avoid busy waiting
             
         # Clean up the temporary file
         try:

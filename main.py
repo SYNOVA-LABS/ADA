@@ -2,19 +2,21 @@
 Main entry point for the ADA system.
 This module initializes the webcam, handles user detection and greets recognized users.
 Then it continues to the core functionality of the ADA system.
+eveyrhting runs in parallel threads to ensure smooth operation. i.e the cv2 will display your face by processing the video stream on one thread
+while the user_detector for example listens for the wake word in another thread.
 """
 
 import cv2  # OpenCV for video capture for user to see themselves
 import logging
 import time
-import threading
+import threading  # for multithreading 
 import os
 from pygame import mixer  # for playing audio files
 
 # Update imports to include the new function
-from User_Detection.detect_user_by_face import detect_user, detect_user_with_registration_check, register_new_user
+from User_Detection.detect_user_by_face import detect_user_with_registration_check, register_new_user
 from Activator.listener import wake_word_detector
-from User_Input.get_user_input import get_user_question
+from User_Input.get_speech_input import get_user_question
 from Vision_GPT.vision_and_promt_processor import analyze_image_with_question
 from TTS.text_to_speech import play_response_async, is_audio_playing
 
@@ -27,13 +29,13 @@ logger = logging.getLogger(__name__)
 # Global session history file path - now in Vision_GPT logs folder
 SESSION_HISTORY_PATH = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Vision_GPT", "logs"), "session_history.log")
 
-def init_session_history():
+def init_session_history() -> bool:
     """
     Initialize the session history log file.
     This file will store Q&A pairs without timestamps for LLM context.
     """
     try:
-        # Create or truncate the session history file
+        # Create or truncate the session history file (overwrite if it exists)
         with open(SESSION_HISTORY_PATH, 'w') as f:
             f.write("ADA SESSION HISTORY\n")
             f.write("==================\n\n")
@@ -43,7 +45,7 @@ def init_session_history():
         logger.error(f"Failed to initialize session history: {e}")
         return False
 
-def add_to_session_history(question, answer):
+def add_to_session_history(question: str, answer: str) -> None:
     """
     Add a Q&A pair to the session history log.
     
@@ -58,7 +60,7 @@ def add_to_session_history(question, answer):
     except Exception as e:
         logger.error(f"Failed to update session history: {e}")
 
-def cleanup_session_history():
+def cleanup_session_history() -> None:
     """
     Clean up the session history file.
     """
@@ -68,13 +70,12 @@ def cleanup_session_history():
     except Exception as e:
         logger.error(f"Error handling session history cleanup: {e}")
 
-
 def init_systems() -> tuple:
     """
     Initialize audio and video capture systems.
 
     Returns:
-        tuple: (video_capture, success) where success is a boolean indicating if initialization was successful
+        tuple: (video_capture, success) where success is a boolean indicating if initialization was successful and capture is the video capture object.
     """
     logger.info("Starting ADA system...")
 
@@ -224,7 +225,8 @@ def activate_ada(frame: cv2.Mat) -> None:
     Args:
         frame: Current video frame to display
     """
-    # Initialize the question thread and state variables if not already done
+    # Initialize the question thread and state variables if not already done.
+    # all these are attributes of the activate_ada function like how class variables work but for functions (they are not global but that's ok)
     if not hasattr(activate_ada, "question_thread"):
         activate_ada.question_thread = None
         activate_ada.current_question = None

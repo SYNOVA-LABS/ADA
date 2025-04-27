@@ -23,8 +23,8 @@ flowchart TD
     E -- Yes --> F[Determine Input Type]
     
     F --> G[Speech Input]
-    F --> H[Text Input]
-    F --> I[Gesture Input]
+    F --> H[Text Input 'TODO' ]
+    F --> I[Gesture Input 'TODO']
     
     G --> J[Process with Speech-to-Text]
     H --> K[Process Text Directly]
@@ -70,3 +70,5 @@ flowchart TD
 - **Configurable**: Input sensitivity, recognition thresholds, preferred input modes
 - **Hardware Support**: Compatible with various microphones and input devices
 - **Extension Points**: API for adding custom input sources and processors
+
+# TODO: add gesture and text input.

@@ -8,7 +8,6 @@ import pickle
 import sqlite3
 import cv2
 import os
-import numpy as np
 import face_recognition
 import time
 import hashlib
@@ -44,7 +43,7 @@ def load_known_faces() -> tuple:
     return known_face_encodings, known_face_names
 
 
-def save_new_face(face_image: np.ndarray) -> tuple:
+def save_new_face(face_image: cv2.Mat) -> tuple:
     """
     Save a new face image and store it in the database.
 
@@ -308,7 +307,7 @@ def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tupl
     return None, False, False, None
 
 
-def register_new_user(face_image: np.ndarray) -> tuple:
+def register_new_user(face_image: cv2.Mat) -> tuple:
     """
     Register a new user with the provided face image.
     

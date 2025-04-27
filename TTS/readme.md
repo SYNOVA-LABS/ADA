@@ -1,6 +1,6 @@
 # Text-to-Speech (TTS) Module
 
-This module converts text responses into natural-sounding speech output, enabling ADA to communicate audibly with users.
+This module converts text responses into natural-sounding speech output, enabling ADA to communicate audibly with users. it uses googles TTS module
 
 ## Overview
 

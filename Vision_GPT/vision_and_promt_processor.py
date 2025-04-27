@@ -5,14 +5,14 @@ and returns a direct answer that includes visual understanding and reasoning.
 """
 
 import os
-import base64
+import base64 # Base64 is used for encoding images (cv frame -> base64 string)
 import logging
-import requests
+import requests # Requests is used for making HTTP requests to the OpenAI API
 import time
 from typing import Dict, Any
 import cv2
 import io
-from PIL import Image
+from PIL import Image # Pillow is used for image processing for base64 encoding
 from dotenv import load_dotenv
 
 # Set up logging
@@ -28,24 +28,24 @@ if not OPENAI_API_KEY:
 
 # Define log directory
 LOG_DIR = os.path.join(os.path.dirname(__file__), "logs")
-# Session history file path (now in the same logs folder)
+# Session history file path (logs folder) holds the conversation history for current session
 SESSION_HISTORY_PATH = os.path.join(LOG_DIR, "session_history.log")
 
-def encode_image_to_base64(image_array):
-    """Convert a numpy array (OpenCV image) to base64 string."""
+def encode_image_to_base64(image_array: cv2.Mat) -> str:
+    """Convert a numpy array (OpenCV image) to base64 string, that can be used in the API request."""
     # Convert from BGR (OpenCV) to RGB (PIL)
     image_rgb = cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB)
     # Convert to PIL Image
     pil_image = Image.fromarray(image_rgb)
     # Create a byte buffer
     buffer = io.BytesIO()
-    # Save image to buffer in JPEG format
+    # Save image to buffer in JPEG format (temp storage)
     pil_image.save(buffer, format="JPEG")
     # Get the byte data and encode to base64
     img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return img_str
 
-def get_session_history():
+def get_session_history() -> str:
     """
     Read the current session history to provide as context.
     
@@ -64,7 +64,7 @@ def get_session_history():
         logger.error(f"Error reading session history: {e}")
         return ""
 
-def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
+def process_with_vision_api(frame: cv2.Mat, question: str) -> Dict[str, Any]:
     """
     Process an image and question using OpenAI's GPT-4 Vision API.
     
@@ -82,6 +82,7 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
         # Encode the image to base64
         base64_image = encode_image_to_base64(frame)
         
+        # http headers for the API request
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {OPENAI_API_KEY}"
@@ -103,11 +104,12 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
         If you cannot determine something with confidence, acknowledge that limitation.
         """
         
-        # Add session history to system prompt if available
+        # Add session history to system prompt if available (avaliable after the first question answer)
         if session_history:
-            system_prompt += "\n\nHere is the conversation history from this session that you can use for context:\n" + session_history
+            system_prompt += "\n\nHere is the conversation history, in order, from this session that you can use for context:\n" + session_history
             logger.info("Session history included in the prompt.")
         
+        # Prepare the payload for the API request
         payload = {
             "model": "gpt-4o",  # Updated to use gpt-4o which supports vision capabilities
             "messages": [
@@ -118,25 +120,26 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
                 {
                     "role": "user", 
                     "content": [
-                        {"type": "text", "text": question},
+                        {"type": "text", "text": question}, # User's question
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}"
+                                "url": f"data:image/jpeg;base64,{base64_image}" # Base64 encoded image
                             }
                         }
                     ]
                 }
             ],
-            "max_tokens": 300
+            "max_tokens": 300 # Limit the response length 
         }
         
         # Log attempt to connect to API (without sensitive data)
         logger.info(f"Sending request to OpenAI Vision API using model: {payload['model']}")
         
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-        response_data = response.json()
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload) # send request to OpenAI API
+        response_data = response.json() # parse the response
         
+        # Check for errors in the response
         if response.status_code != 200:
             logger.error(f"API error: {response_data}")
             
@@ -150,19 +153,19 @@ def process_with_vision_api(frame, question: str) -> Dict[str, Any]:
             
             return {"error": "API error", "answer": "Sorry, I encountered an error while analyzing the image."}
         
-        # Extract the answer text from the response
+        # Extract the answer text from the response if no errors
         answer = response_data["choices"][0]["message"]["content"]
         
         # Log successful processing
         logger.info(f"Successfully processed question: {question}")
         
-        return {"success": True, "answer": answer, "full_response": response_data}
+        return {"success": True, "answer": answer, "full_response": response_data} # return the answer and full response for debugging reasons
         
     except Exception as e:
         logger.error(f"Error processing with vision API: {e}")
         return {"error": str(e), "answer": "Sorry, I couldn't process the image due to a technical error."}
 
-def analyze_image_with_question(frame, question: str) -> str:
+def analyze_image_with_question(frame: cv2.Mat, question: str) -> str:
     """
     Main entry point for the Vision GPT module. Processes a frame and question together.
     
@@ -176,7 +179,7 @@ def analyze_image_with_question(frame, question: str) -> str:
     try:
         logger.info(f"Processing question with image: {question}")
         
-        # Log directory for storing analysis details
+        # Log directory for storing analysis details ( stores all the questions and answers) the session logs are handled by the main file
         log_dir = LOG_DIR
         os.makedirs(log_dir, exist_ok=True)
         
@@ -190,12 +193,12 @@ def analyze_image_with_question(frame, question: str) -> str:
         # Get the answer from the result
         answer = result.get("answer", "I couldn't analyze the image properly.")
         
-        # Log the processing details
+        # Log the processing details (question, answer, timestamp)
         with open(log_file, "a") as f:
             f.write(f"[{timestamp}] Question: {question}\n")
             f.write(f"[{timestamp}] Answer: {answer}\n\n")
         
-        return answer
+        return answer # return the answer to the user
         
     except Exception as e:
         logger.error(f"Error in analyze_image_with_question: {e}")

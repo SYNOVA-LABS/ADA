@@ -8,8 +8,8 @@ import logging
 import os
 import queue
 import json
-import sounddevice as sd
-from vosk import Model, KaldiRecognizer
+import sounddevice as sd # used for audio input
+from vosk import Model, KaldiRecognizer # actually used for speech recognition
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,8 @@ def wake_word_detector() -> bool:
     model = Model(MODEL_PATH)
     q = queue.Queue()
 
-    # Callback to store audio data
-    def callback(indata, frames, time, status):
+    # Callback func to store audio data
+    def callback(indata: bytes, frames: int, time: float, status: sd.CallbackFlags) -> None:
         if status:
             logger.warning(f"Audio status: {status}")
         q.put(bytes(indata))

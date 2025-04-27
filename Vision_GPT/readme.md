@@ -14,7 +14,7 @@ The Vision GPT module is responsible for:
 
 ```mermaid
 flowchart TD
-    A[Start Vision GPT] --> B[Capture Frame & Question]
+    A[Start Vision GPT] --> B[Get Frame & Question]
     B --> C[Encode Image to Base64]
     C --> D[Prepare API Request]
     D --> E[Send to GPT-4o API]

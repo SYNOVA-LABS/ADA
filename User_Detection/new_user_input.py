@@ -5,7 +5,6 @@ the returned name and authorization level are used to store the face in the data
 """
 
 import cv2
-import numpy as np
 import time
 import hashlib
 from datetime import datetime
@@ -26,7 +25,7 @@ def generate_unique_username() -> str:
     return f"User_{timestamp}_{unique_id}"
 
 
-def get_user_input_opencv(face_image: np.ndarray) -> tuple:
+def get_user_input_opencv(face_image: cv2.Mat) -> tuple:
     """
     Display a face image and prompt the user to input their name and authorization level.
 

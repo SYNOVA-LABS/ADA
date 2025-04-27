@@ -12,22 +12,21 @@ ADA is a modular, extensible personal assistant system that combines face recogn
 ### Modules
 
 - [**User Detection**](User_Detection/) - Recognizes users via face recognition for personalized interactions
-- [**Activator**](Activator/) - Central control system managing ADA's activation states and module coordination
-- [**Greet User**](Greet_User/) - Provides personalized audio greetings using text-to-speech technology
-- [**CV Context**](CV_Context/) - Analyzes visual environment to provide contextual awareness
-- [**LLM CV Context Questions**](LLM_CV_Context_Questions/) - Generates intelligent questions about visual scenes
-- [**User Input**](User_Input/) - Captures and processes various forms of user input
-- [**Vision GPT**](Vision_GPT/) - Integrates visual input with language understanding for image analysis and questions
-- [**Models**](Models/) - Contains language and speech models used by the system
+- [**Activator**](Activator/) - Handles wake word detection to activate the ADA system
+- [**TTS**](TTS/) - Text-to-Speech module for converting responses to spoken audio
+- [**User Input**](User_Input/) - Captures and processes speech input from users
+- [**Vision GPT**](Vision_GPT/) - Integrates visual input with GPT-4o for image analysis and answering questions
+- [**Models**](Models/) - Contains speech recognition models for local processing
 
 ### Key Features
 
-- **User Recognition** - Identifies users through computer vision
-- **Contextual Understanding** - Interprets visual environment and user context
-- **Natural Interaction** - Responds to voice commands and generates natural speech
-- **Modular Design** - Extensible architecture allowing for new capabilities
-- **Privacy-Focused** - Processes data locally when possible
-- **Visual Analysis** - Answers questions about visual content in real-time
+- **User Recognition** - Identifies users through facial recognition
+- **Wake Word Activation** - Activates using configurable wake words
+- **Vision-based Q&A** - Answers questions about what the camera sees
+- **Natural Speech Interaction** - Processes spoken questions and provides spoken responses
+- **User Registration** - Adds new users to the system for future recognition
+- **Session Logging** - Maintains history of interactions for reference
+- **Real-time Visual Feedback** - Displays system status and responses on screen
 
 ### Getting Started
 
@@ -57,7 +56,7 @@ Once ADA is running, activate it using any of these wake words:
 - "ADA"
 - "Hi"
 
-After saying a wake word, ADA will detect your presence and begin listening for your commands.
+After saying a wake word, ADA will detect your presence and begin listening for your questions. You can ask questions about what the camera sees, and ADA will analyze the image and provide spoken responses.
 
 #### Install Python (if you don't have Python)
 
@@ -73,23 +72,21 @@ brew install python3
 
 ### System Requirements
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - 4GB RAM minimum (8GB recommended)
-- Webcam for user detection
+- Webcam for user detection and visual analysis
 - Microphone for voice input
 - Internet connection for OpenAI API access
+- OpenAI API key with access to GPT-4o
 
 ### Future Development
 
-- Enhanced CV contextual understanding
+- Enhanced gesture recognition capabilities 
+- Text input support alongside voice
 - Multi-user simultaneous interaction
-- Expanded domain knowledge
+- Expanded offline functionality
 - Integration with home automation systems
 - Mobile companion application
-
-### Contributing
-
-Contributions are welcome! Please check the CONTRIBUTING.md file for guidelines.
 
 ### License
 
