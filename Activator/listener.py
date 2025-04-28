@@ -8,8 +8,8 @@ import logging
 import os
 import queue
 import json
-import sounddevice as sd # used for audio input
-from vosk import Model, KaldiRecognizer # actually used for speech recognition
+import sounddevice as sd  # used for audio input
+from vosk import Model, KaldiRecognizer  # actually used for speech recognition
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ BLOCK_SIZE = 8000
 MODEL_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "Models/vosk-model-small-en-us-0.15"
 )
-WAKE_WORDS = ["hey ada", "hey a.d.a", "ok ada", "hello ada", "ada", 'hi']
+WAKE_WORDS = ["hey ada", "hey a.d.a", "ok ada", "hello ada", "ada", "hi"]
 
 
 def wake_word_detector() -> bool:
@@ -36,7 +36,9 @@ def wake_word_detector() -> bool:
     q = queue.Queue()
 
     # Callback func to store audio data
-    def callback(indata: bytes, frames: int, time: float, status: sd.CallbackFlags) -> None:
+    def callback(
+        indata: bytes, frames: int, time: float, status: sd.CallbackFlags
+    ) -> None:
         if status:
             logger.warning(f"Audio status: {status}")
         q.put(bytes(indata))

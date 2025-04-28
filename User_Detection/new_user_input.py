@@ -125,7 +125,7 @@ def get_user_input_opencv(face_image: cv2.Mat) -> tuple:
         elif 32 <= key <= 126:  # Printable ASCII characters
             input_name += chr(key)
 
-    auth = "guest"  # default value for now 
+    auth = "guest"  # default value for now
 
     # Close window
     cv2.destroyWindow("New User")

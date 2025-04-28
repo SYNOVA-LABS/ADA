@@ -14,7 +14,10 @@ import hashlib
 import logging
 from datetime import datetime
 
-from User_Detection.new_user_input import generate_unique_username, get_user_input_opencv
+from User_Detection.new_user_input import (
+    generate_unique_username,
+    get_user_input_opencv,
+)
 from .db_handler import DB_PATH, load_face_data, store_face_data
 
 logger = logging.getLogger(__name__)
@@ -216,7 +219,7 @@ def detect_user(video_capture: cv2.VideoCapture) -> tuple:
 def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tuple:
     """
     Detect and identify a user from video feed, but don't register new users immediately.
-    
+
     This function is similar to detect_user(), but it returns the face image for new users
     instead of registering them, allowing the main thread to handle user registration.
 
@@ -232,7 +235,7 @@ def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tupl
     """
     # Load known faces from database
     known_face_encodings, known_face_names = load_known_faces()
-    
+
     # Check if webcam is opened
     if not video_capture.isOpened():
         logger.error("Failed to open webcam")
@@ -263,18 +266,20 @@ def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tupl
 
             # Detect faces
             face_locations = face_recognition.face_locations(rgb_small_frame)
-            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+            face_encodings = face_recognition.face_encodings(
+                rgb_small_frame, face_locations
+            )
 
             # Check if any faces were detected
             if face_encodings:
                 # We'll work with the first face only
                 face_encoding = face_encodings[0]
-                
+
                 # Check if face matches any known faces
                 matches = face_recognition.compare_faces(
                     known_face_encodings, face_encoding, tolerance=0.6
                 )
-                
+
                 # If we found a match, return the name
                 if True in matches:
                     first_match_index = matches.index(True)
@@ -288,16 +293,16 @@ def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tupl
                     right *= 4
                     bottom *= 4
                     left *= 4
-                    
+
                     # Extract face from the original frame
                     face_image = frame[top:bottom, left:right]
-                    
+
                     # Generate a temporary ID
                     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                     hash_object = hashlib.md5(str(time.time()).encode())
                     unique_id = hash_object.hexdigest()[:6]
                     temp_user_id = f"User_{timestamp}_{unique_id}"
-                    
+
                     logger.info(f"New face detected, needs registration")
                     return temp_user_id, True, True, face_image
 
@@ -310,13 +315,13 @@ def detect_user_with_registration_check(video_capture: cv2.VideoCapture) -> tupl
 def register_new_user(face_image: cv2.Mat) -> tuple:
     """
     Register a new user with the provided face image.
-    
+
     This function should be called from the main thread to ensure
     the OpenCV windows can be displayed properly.
-    
+
     Parameters:
         face_image (numpy.ndarray): The face image to register
-        
+
     Returns:
         tuple: (face_id, name, auth)
             - face_id (str): The unique ID assigned to this face
@@ -326,7 +331,7 @@ def register_new_user(face_image: cv2.Mat) -> tuple:
     if face_image is None:
         logger.error("No face image provided for registration")
         return None, None, None
-    
+
     # Generate a unique ID
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     hash_object = hashlib.md5(str(time.time()).encode())
@@ -350,7 +355,7 @@ def register_new_user(face_image: cv2.Mat) -> tuple:
         logger.error(f"Error getting user input: {e}")
         name = generate_unique_username()
         auth = "guest"
-    
+
     # Store in database
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -365,7 +370,9 @@ def register_new_user(face_image: cv2.Mat) -> tuple:
         )
         conn.commit()
         conn.close()
-        logger.info(f"Stored new face in database: {name} (ID: {face_id}, Auth: {auth})")
+        logger.info(
+            f"Stored new face in database: {name} (ID: {face_id}, Auth: {auth})"
+        )
     except Exception as e:
         logger.error(f"Error storing face data: {e}")
 
