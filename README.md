@@ -16,7 +16,7 @@ ADA is a modular, extensible personal assistant system that combines face recogn
 - [**TTS**](TTS/) - Text-to-Speech module for converting responses to spoken audio
 - [**User Input**](User_Input/) - Captures and processes speech input from users
 - [**Vision GPT**](Vision_GPT/) - Integrates visual input with GPT-4o for image analysis and answering questions
-- [**Models**](Models/) - Contains speech recognition models for local processing
+- [**Models**](Models/) - Contains Local AI models like speech recognition models for local processing
 
 ### Other Folders
 - [**Tests**](tests/) - Contains model tests, done using jupyter nookbooks

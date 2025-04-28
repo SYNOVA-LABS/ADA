@@ -1,6 +1,6 @@
 # ADA Models
 
-This directory contains language and speech models used by the Advanced Digital Agent system. thes are the local models 
+This directory contains Local Models like for language and speech models used by the Advanced Digital Agent system.
 
 ## Overview
 
